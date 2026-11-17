@@ -1,0 +1,2399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinOS Local — Complete Finance & Integrated Notes</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --surface: #0f172a;
+      --surface-2: #1e293b;
+      --border: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --green: #10b981;
+      --green-soft: rgba(16, 185, 129, 0.15);
+      --red: #f43f5e;
+      --red-soft: rgba(244, 63, 94, 0.15);
+      --blue: #38bdf8;
+      --blue-soft: rgba(56, 189, 248, 0.15);
+      --purple: #a78bfa;
+      --amber: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #000; color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+    .app { width: 100%; max-width: 430px; background: var(--bg); min-height: 100vh; padding-bottom: 92px; border-x: 1px solid var(--border); position: relative; }
+
+    /* Header */
+    header { position: sticky; top: 0; z-index: 20; background: rgba(2, 6, 23, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 11px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+    .logo { width: 28px; height: 28px; border-radius: 8px; background: var(--green); color: #020617; display: grid; place-items: center; font-weight: 900; flex-shrink: 0; }
+    .header-actions { display: flex; align-items: center; gap: 6px; }
+    .pill-btn { border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 5px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .pill-btn.active { background: var(--green-soft); border-color: rgba(16,185,129,0.4); color: #6ee7b7; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
+    .pill-btn.active .dot { background: var(--green); }
+    .icon-btn { position: relative; background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 31px; height: 31px; border-radius: 10px; cursor: pointer; display: grid; place-items: center; font-size: 14px; flex-shrink: 0; }
+    .icon-btn:hover { border-color: #334155; }
+    .badge { position: absolute; top: -4px; right: -4px; background: var(--amber); color: #000; font-size: 10px; font-weight: 800; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; }
+
+    /* Layout & Cards */
+    main { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 15px; }
+    .hero { background: linear-gradient(145deg, #0f172a, #064e3b55); }
+    .label-xs { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .hero-amount { font-size: 28px; font-weight: 800; margin: 6px 0 14px; letter-spacing: -0.5px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; font-size: 11px; }
+    .grid-3 b { display: block; font-size: 12px; margin-top: 2px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+    /* Metric KPI Cards in Chart */
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
+    .kpi-val { font-size: 15px; font-weight: 800; margin-top: 4px; color: var(--text); }
+    .kpi-sub { font-size: 10px; color: var(--muted); margin-top: 3px; display: block; }
+    .trend-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; margin-top: 4px; }
+    .trend-good { background: var(--green-soft); color: #6ee7b7; }
+    .trend-bad { background: var(--red-soft); color: #fda4af; }
+    .trend-neutral { background: var(--surface-2); color: var(--muted); }
+
+    /* Time Picker Bar in Chart */
+    .time-picker-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .time-picker-bar select, .time-picker-bar input { padding: 6px 9px; font-size: 11px; font-weight: 600; }
+
+    /* Analytics Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .data-table th { text-align: left; color: var(--muted); font-weight: 700; padding: 7px 6px; border-bottom: 1px solid var(--surface-2); font-size: 10px; text-transform: uppercase; }
+    .data-table td { padding: 9px 6px; border-bottom: 1px solid rgba(30, 41, 59, 0.6); color: #e2e8f0; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .num-col { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* Donut & Drilldown */
+    .donut-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .donut-box { position: relative; width: 118px; height: 118px; flex-shrink: 0; }
+    .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; padding: 14px; }
+    .cat-row-btn { width: 100%; background: transparent; border: 1px solid transparent; border-radius: 12px; padding: 7px 8px; text-align: left; color: var(--text); cursor: pointer; transition: 0.15s; }
+    .cat-row-btn:hover, .cat-row-btn.active { background: var(--bg); border-color: var(--surface-2); }
+    .drill-box { background: var(--bg); border: 1px solid var(--surface-2); border-radius: 14px; padding: 10px 12px; margin-top: 8px; }
+
+    /* Cluster Sections */
+    .cluster-box { background: rgba(15, 23, 42, 0.55); border: 1px solid var(--border); border-radius: 18px; padding: 12px; transition: border-color 0.2s; }
+    .cluster-box.editing { border-color: var(--amber); background: rgba(245, 158, 11, 0.04); }
+    .cluster-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 6px; }
+    .cluster-title { font-size: 12px; font-weight: 700; color: var(--text); }
+    .cluster-sub { font-size: 11px; color: var(--green); font-weight: 700; margin-left: 6px; }
+    .edit-mode-btn { background: var(--surface-2); border: 1px solid #334155; color: #cbd5e1; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .edit-mode-btn.active { background: var(--amber); border-color: var(--amber); color: #020617; }
+    .wallets-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .wallet-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 11px; transition: 0.15s; position: relative; }
+    .wallet-card.locked { cursor: default; }
+    .wallet-card.unlocked { cursor: pointer; border-color: rgba(245, 158, 11, 0.6); }
+    .wallet-card.unlocked:hover { border-color: var(--amber); transform: translateY(-1px); }
+    .wallet-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .wallet-bal { font-size: 14px; font-weight: 800; color: var(--text); }
+    .add-wallet-slot { border: 1px dashed #475569; background: transparent; border-radius: 14px; padding: 11px; color: var(--amber); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; min-height: 62px; }
+    .empty-hint { font-size: 11px; color: #64748b; padding: 6px 2px; line-height: 1.4; }
+
+    /* Custom Financial Notes & Visual Integration Picker */
+    .wallet-link-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; margin-top: 4px; }
+    .link-exp { background: var(--blue-soft); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .link-inc { background: var(--green-soft); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .link-none { background: var(--surface-2); color: var(--muted); }
+
+    .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+    .mode-card { background: var(--bg); border: 1.5px solid var(--surface-2); border-radius: 14px; padding: 10px; text-align: left; cursor: pointer; transition: 0.15s; color: var(--text); }
+    .mode-card:hover { border-color: #475569; }
+    .mode-card.active-stand { border-color: var(--green); background: rgba(16, 185, 129, 0.08); }
+    .mode-card.active-link { border-color: var(--blue); background: rgba(56, 189, 248, 0.09); }
+    .mode-card-title { font-size: 12px; font-weight: 800; display: block; margin-bottom: 3px; }
+    .mode-card-desc { font-size: 10px; color: var(--muted); line-height: 1.3; display: block; }
+
+    .wallet-pick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px; }
+    .wallet-pick-btn { background: var(--surface); border: 1.5px solid var(--surface-2); border-radius: 11px; padding: 8px 9px; text-align: left; cursor: pointer; color: var(--text); transition: 0.15s; }
+    .wallet-pick-btn.selected { border-color: var(--blue); background: rgba(56, 189, 248, 0.12); }
+    .wallet-pick-name { font-size: 11.5px; font-weight: 700; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wallet-pick-bal { font-size: 10px; color: var(--muted); display: block; margin-top: 2px; }
+    .wallet-pick-btn.selected .wallet-pick-bal { color: #7dd3fc; }
+
+    .flow-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+    .flow-toggle-btn { background: var(--surface); border: 1.5px solid var(--surface-2); border-radius: 11px; padding: 8px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--muted); }
+    .flow-toggle-btn.active-exp { border-color: var(--red); background: var(--red-soft); color: #fda4af; }
+    .flow-toggle-btn.active-inc { border-color: var(--green); background: var(--green-soft); color: #6ee7b7; }
+
+    .mini-chip-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .mini-chip { background: var(--surface); border: 1px solid var(--surface-2); color: #cbd5e1; padding: 5px 8px; border-radius: 8px; font-size: 10.5px; font-weight: 600; cursor: pointer; }
+    .mini-chip.selected { background: var(--blue-soft); border-color: var(--blue); color: #7dd3fc; }
+
+    .note-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 11px; display: flex; align-items: flex-start; gap: 9px; transition: 0.15s; }
+    .note-item.done { opacity: 0.62; background: rgba(15, 23, 42, 0.45); }
+    .note-check { width: 21px; height: 21px; border-radius: 6px; border: 1.5px solid #475569; background: var(--bg); color: #020617; display: grid; place-items: center; font-size: 12px; font-weight: 900; cursor: pointer; flex-shrink: 0; margin-top: 1px; }
+    .note-check.checked { background: var(--green); border-color: var(--green); }
+    .note-title { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.35; }
+    .note-item.done .note-title { text-decoration: line-through; color: var(--muted); }
+    .note-due { display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 5px; }
+    .due-normal { background: var(--surface-2); color: var(--muted); }
+    .due-soon { background: var(--amber-soft); color: #fcd34d; }
+    .due-over { background: var(--red-soft); color: #fda4af; }
+    .tx-synced-tag { display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 5px; background: var(--green-soft); color: #6ee7b7; }
+    .suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .suggest-chip { background: var(--bg); border: 1px solid var(--surface-2); color: #cbd5e1; padding: 5px 9px; border-radius: 99px; font-size: 10.5px; cursor: pointer; }
+    .suggest-chip:hover { border-color: var(--green); color: #6ee7b7; }
+
+    /* Quick Cash Form */
+    .cash-fields { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; margin: 10px 0 8px; }
+    .field-label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    input, select { background: var(--bg); border: 1px solid var(--surface-2); color: var(--text); border-radius: 12px; padding: 9px 11px; font-size: 12px; outline: none; width: 100%; }
+    input:focus, select:focus { border-color: var(--green); }
+    .btn-primary { background: var(--green); color: #020617; border: none; border-radius: 12px; padding: 10px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid #334155; border-radius: 10px; padding: 6px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .btn-danger { background: rgba(244, 63, 94, 0.15); color: var(--red); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 12px; padding: 10px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+    .preset-btn { background: var(--surface-2); border: none; color: #cbd5e1; padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .preset-btn:hover { background: #334155; }
+
+    /* Wallet Scope Chips in Budget */
+    .scope-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .scope-chip { background: var(--bg); border: 1px solid var(--surface-2); color: var(--muted); padding: 5px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .scope-chip.active { background: var(--green-soft); border-color: rgba(16,185,129,0.5); color: #6ee7b7; }
+
+    /* Transactions List */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 11px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .tx-item.sync-row { border-style: dashed; border-color: rgba(167, 139, 250, 0.35); background: rgba(15, 23, 42, 0.6); }
+    .tx-title { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .badge-mode { font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
+    .badge-auto { background: rgba(56,189,248,0.18); color: var(--blue); }
+    .badge-manual { background: var(--surface-2); color: var(--muted); }
+    .badge-sync { background: rgba(167,139,250,0.2); color: var(--purple); }
+    .badge-edited { background: var(--amber-soft); color: #fcd34d; }
+    .tx-meta { font-size: 11px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+    .amt-in { color: var(--green); font-weight: 700; font-size: 12px; }
+    .amt-out { color: var(--red); font-weight: 700; font-size: 12px; }
+    .amt-trf { color: var(--blue); font-weight: 700; font-size: 12px; }
+    .amt-sync { color: var(--purple); font-weight: 700; font-size: 12px; }
+    .act-icon { background: none; border: none; color: #64748b; cursor: pointer; font-size: 13px; padding: 4px; }
+    .act-icon:hover { color: var(--text); }
+    .act-icon.del:hover { color: var(--red); }
+
+    /* Segmented Tabs & Progress Bars */
+    .seg-tabs { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; gap: 4px; overflow-x: auto; }
+    .seg-btn { flex: 1; padding: 7px 6px; border: none; border-radius: 9px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .seg-btn.active { background: var(--green); color: #020617; }
+    .seg-btn.active-sub { background: var(--surface-2); color: var(--text); }
+    .bar-bg { width: 100%; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin: 6px 0; }
+    .bar-fill { height: 100%; border-radius: 99px; transition: width 0.25s; }
+    .warn-banner { background: var(--amber-soft); border: 1px solid rgba(245,158,11,0.45); color: #fde68a; border-radius: 12px; padding: 9px 11px; font-size: 11px; line-height: 1.4; }
+
+    /* Bottom Nav — 5 Slot Simetris */
+    nav { position: fixed; bottom: 0; width: 100%; max-width: 430px; background: rgba(2,6,23,0.96); border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; align-items: center; padding: 8px 4px; z-index: 30; }
+    .nav-btn { background: none; border: none; color: #64748b; font-size: 10px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; }
+    .nav-btn.active { color: var(--green); }
+    .nav-btn span.ico { font-size: 17px; }
+    .fab { margin: -26px 8px 0; width: 48px; height: 48px; border-radius: 16px; background: var(--green); color: #020617; border: none; font-size: 24px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(16,185,129,0.35); display: grid; place-items: center; }
+
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 50; display: none; align-items: flex-end; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal-box { width: 100%; max-width: 430px; max-height: 90vh; overflow-y: auto; background: var(--surface); border-top: 1px solid var(--surface-2); border-radius: 24px 24px 0 0; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .cat-chip { background: var(--bg); border: 1px solid var(--surface-2); color: #cbd5e1; padding: 8px 4px; border-radius: 10px; font-size: 11px; text-align: center; cursor: pointer; }
+    .cat-chip.selected { background: var(--green-soft); border-color: var(--green); color: #6ee7b7; font-weight: 700; }
+    .other-box { background: var(--amber-soft); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 12px; padding: 10px; }
+    .other-box label { display: block; font-size: 11px; font-weight: 700; color: #fcd34d; margin-bottom: 5px; }
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .sim-btn { background: var(--surface-2); border: none; color: var(--text); padding: 10px; border-radius: 12px; font-size: 11px; text-align: left; cursor: pointer; line-height: 1.35; }
+    .sim-btn:hover { background: #334155; }
+
+    /* Toast */
+    .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid var(--amber); color: #fef3c7; padding: 8px 14px; border-radius: 99px; font-size: 11px; font-weight: 600; z-index: 60; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-width: 92%; text-align: center; }
+    .toast.show { display: block; }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <div class="app">
+    <header>
+      <div class="brand"><div class="logo">F</div> FinOS Local</div>
+      <div class="header-actions">
+        <button id="btn-auto-toggle" class="pill-btn active" data-action="toggle-auto">
+          <span class="dot"></span> <span id="auto-label">Auto: ON</span>
+        </button>
+        <button class="icon-btn" data-action="open-unparsed" title="Notifikasi gagal baca">
+          🔔 <span id="unparsed-badge" class="badge" style="display:none;">0</span>
+        </button>
+        <button class="icon-btn" data-action="open-settings" title="Pengaturan Sistem">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <main id="screen-container"></main>
+
+    <nav>
+      <button class="nav-btn active" data-tab="home"><span class="ico">🏠</span>Beranda</button>
+      <button class="nav-btn" data-tab="report"><span class="ico">📊</span>Laporan</button>
+      <button class="fab" data-action="open-add">+</button>
+      <button class="nav-btn" data-tab="budget"><span class="ico">🎯</span>Budget</button>
+      <button class="nav-btn" data-tab="notes"><span class="ico">📝</span>Catatan</button>
+    </nav>
+  </div>
+
+  <!-- MODAL TAMBAH TRANSAKSI -->
+  <div id="modal-add" class="modal-backdrop">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="seg-tabs" style="flex:1; margin-right:10px;">
+          <button class="seg-btn active" data-tx-tab="expense">Pengeluaran</button>
+          <button class="seg-btn" data-tx-tab="income">Pemasukan</button>
+          <button class="seg-btn" data-tx-tab="transfer">Transfer</button>
+        </div>
+        <button class="icon-btn" data-action="close-modals">✕</button>
+      </div>
+      <div id="modal-add-body"></div>
+    </div>
+  </div>
+
+  <!-- MODAL GENERIC -->
+  <div id="modal-generic" class="modal-backdrop" style="align-items:center; padding:16px;">
+    <div id="modal-generic-box" class="modal-box" style="border-radius:22px; max-width:395px;"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'finos_html_v4_clean';
+    const EXPENSE_CATS = ['Makan & Minum', 'Transportasi', 'Belanja Online', 'Tagihan & Pulsa', 'Hiburan', 'Kesehatan', 'Lainnya'];
+    const INCOME_CATS = ['Gaji & Uang Saku', 'Bonus & Hadiah', 'Investasi', 'Lainnya'];
+    const PERIOD_KEYS = ['daily', 'weekly', 'monthly', 'yearly', 'custom'];
+    const CHART_COLORS = ['#10b981', '#38bdf8', '#f59e0b', '#f43f5e', '#a78bfa', '#ec4899', '#14b8a6'];
+    const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    const nowInit = new Date();
+    const todayStr = nowInit.toISOString().slice(0, 10);
+    const firstDayMonth = todayStr.slice(0, 8) + '01';
+    const firstDayYear = todayStr.slice(0, 4) + '-01-01';
+
+    function makeEmptyPeriodConfig(start, end) {
+      return {
+        customStart: start,
+        customEnd: end,
+        includedWalletIds: [],
+        allocations: {}
+      };
+    }
+
+    const EMPTY_STATE = {
+      settings: {
+        autoTrackingEnabled: true,
+        autoEnabledAt: new Date(Date.now() - 86400000).toISOString(),
+        hideBalance: false
+      },
+      wallets: [],
+      transactions: [],
+      unparsedLogs: [],
+      noteClusters: [],
+      notes: [],
+      activeBudgetPeriod: 'monthly',
+      budgetsByPeriod: {
+        daily: makeEmptyPeriodConfig(todayStr, todayStr),
+        weekly: makeEmptyPeriodConfig(todayStr, todayStr),
+        monthly: makeEmptyPeriodConfig(firstDayMonth, todayStr),
+        yearly: makeEmptyPeriodConfig(firstDayYear, todayStr),
+        custom: makeEmptyPeriodConfig(firstDayMonth, todayStr)
+      }
+    };
+
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || JSON.parse(JSON.stringify(EMPTY_STATE));
+    if (!Array.isArray(state.noteClusters)) state.noteClusters = [];
+    if (!Array.isArray(state.notes)) state.notes = [];
+
+    let clusterEditMode = { bank: false, ewallet: false, cash: false };
+
+    let activeTab = 'home';
+    let reportSubTab = 'history';
+    let historyTypeFilter = 'ALL';
+    let historyWalletFilter = 'ALL';
+    let notesStatusFilter = 'ALL';
+
+    // State Sub-Tab Grafik
+    let chartType = 'expense';
+    let periodFilter = 'month';
+    let chartSelectedMonth = nowInit.getMonth();
+    let chartSelectedYear = nowInit.getFullYear();
+    let chartCustomStart = firstDayMonth;
+    let chartCustomEnd = todayStr;
+    let walletFilter = 'ALL';
+    let chartViewMode = 'donut';
+    let drilldownCat = null;
+
+    let modalTxType = 'expense';
+    let selectedCategory = EXPENSE_CATS[0];
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2900);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function rp(num) {
+      if (state.settings.hideBalance) return 'Rp •••••••';
+      return (num < 0 ? '-' : '') + 'Rp ' + Math.abs(Math.round(num)).toLocaleString('id-ID');
+    }
+
+    function rpCompact(num) {
+      if (state.settings.hideBalance) return '•••';
+      const abs = Math.abs(num);
+      if (abs >= 1000000) return (abs / 1000000).toFixed(1).replace('.0', '') + 'jt';
+      if (abs >= 1000) return Math.round(abs / 1000) + 'rb';
+      return String(abs);
+    }
+
+    function esc(str) {
+      return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    function formatTimeShort(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' +
+             d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getDueBadgeInfo(dueDateStr, isDone) {
+      if (!dueDateStr) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      if (isDone) return { cls: 'due-normal', label: '📅 ' + dueDateStr };
+      if (dueDateStr < today) return { cls: 'due-over', label: '⚠️ Lewat: ' + dueDateStr };
+      if (dueDateStr === today) return { cls: 'due-soon', label: '⏰ Hari Ini: ' + dueDateStr };
+      return { cls: 'due-normal', label: '📅 Target: ' + dueDateStr };
+    }
+
+    function applyWalletEffect(tx, reverse = false) {
+      const m = reverse ? -1 : 1;
+      state.wallets = state.wallets.map(w => {
+        if (tx.type === 'income' && w.id === tx.walletId) return { ...w, balance: w.balance + tx.amount * m };
+        if (tx.type === 'expense' && w.id === tx.walletId) return { ...w, balance: w.balance - tx.amount * m };
+        if (tx.type === 'sync' && w.id === tx.walletId) return { ...w, balance: w.balance + tx.syncDiff * m };
+        if (tx.type === 'transfer') {
+          if (w.id === tx.walletId) return { ...w, balance: w.balance - tx.amount * m };
+          if (w.id === tx.targetWalletId) return { ...w, balance: w.balance + tx.amount * m };
+        }
+        return w;
+      });
+    }
+
+    function autoCategory(text) {
+      const l = text.toLowerCase();
+      if (/(kopi|warung|makan|nasi|mie|ayam|teh|gofood|indomaret|alfamart|minum|es )/.test(l)) return 'Makan & Minum';
+      if (/(gojek|grab|bensin|parkir|tol|kereta)/.test(l)) return 'Transportasi';
+      if (/(shopee|tokopedia|lazada|tiktok)/.test(l)) return 'Belanja Online';
+      if (/(pln|listrik|pulsa|paket|wifi|pdam)/.test(l)) return 'Tagihan & Pulsa';
+      if (/(obat|apotek|klinik|dokter)/.test(l)) return 'Kesehatan';
+      return 'Lainnya';
+    }
+
+    function getBudgetUsageStatus(spent, limit) {
+      if (limit <= 0) {
+        return { text: 'Belum diatur', color: 'var(--muted)', barColor: 'var(--green)', pct: 0 };
+      }
+      const pct = (spent / limit) * 100;
+      if (spent > limit) {
+        return { text: `Melebihi ${rp(spent - limit)}`, color: 'var(--red)', barColor: 'var(--red)', pct: 100 };
+      }
+      if (spent === limit) {
+        return { text: 'Habis (100% Terpakai)', color: 'var(--amber)', barColor: 'var(--amber)', pct: 100 };
+      }
+      const isWarning = pct >= 75;
+      return {
+        text: `Sisa ${rp(limit - spent)}`,
+        color: isWarning ? 'var(--amber)' : 'var(--green)',
+        barColor: isWarning ? 'var(--amber)' : 'var(--green)',
+        pct
+      };
+    }
+
+    function isTxInPeriod(tx, periodKey, cfg) {
+      const txDate = new Date(tx.createdAt);
+      const txYmd = txDate.toISOString().slice(0, 10);
+      const now = new Date();
+      const nowYmd = now.toISOString().slice(0, 10);
+
+      if (periodKey === 'daily') return txYmd === nowYmd;
+      if (periodKey === 'weekly') {
+        const diffDays = (now.getTime() - txDate.getTime()) / 86400000;
+        return diffDays >= 0 && diffDays <= 7;
+      }
+      if (periodKey === 'monthly') return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+      if (periodKey === 'yearly') return txDate.getFullYear() === now.getFullYear();
+      if (periodKey === 'custom') return txYmd >= cfg.customStart && txYmd <= cfg.customEnd;
+      return true;
+    }
+
+    function getPeriodLabel(periodKey, cfg) {
+      const map = {
+        daily: 'Harian (Hari Ini)',
+        weekly: 'Pekanan (7 Hari Terakhir)',
+        monthly: 'Bulanan (Bulan Ini)',
+        yearly: 'Tahunan (Tahun Ini)',
+        custom: `Periode (${cfg.customStart} s/d ${cfg.customEnd})`
+      };
+      return map[periodKey] || 'Bulanan';
+    }
+
+    function getAvailableYears() {
+      const curYear = new Date().getFullYear();
+      const yearSet = new Set([curYear - 1, curYear, curYear + 1]);
+      state.transactions.forEach(t => {
+        const y = new Date(t.createdAt).getFullYear();
+        if (!isNaN(y)) yearSet.add(y);
+      });
+      return Array.from(yearSet).sort((a, b) => b - a);
+    }
+
+    function getChartDateWindow() {
+      const now = new Date();
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      let start, end, prevStart, prevEnd, daysCount, label, prevLabel;
+
+      if (periodFilter === 'week') {
+        end = endOfToday;
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+        daysCount = 7;
+        prevEnd = new Date(start.getTime() - 1);
+        prevStart = new Date(prevEnd.getTime() - 7 * 86400000 + 1);
+        label = '7 Hari Terakhir';
+        prevLabel = '7 hari sblmnya';
+      } else if (periodFilter === 'month') {
+        const isCurrentMonth = chartSelectedYear === now.getFullYear() && chartSelectedMonth === now.getMonth();
+        start = new Date(chartSelectedYear, chartSelectedMonth, 1, 0, 0, 0, 0);
+        if (isCurrentMonth) {
+          end = endOfToday;
+          daysCount = Math.max(1, now.getDate());
+        } else {
+          end = new Date(chartSelectedYear, chartSelectedMonth + 1, 0, 23, 59, 59, 999);
+          daysCount = end.getDate();
+        }
+        const prevMonthDate = new Date(chartSelectedYear, chartSelectedMonth - 1, 1);
+        prevStart = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), 1, 0, 0, 0, 0);
+        prevEnd = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        label = `${MONTH_NAMES[chartSelectedMonth]} ${chartSelectedYear}`;
+        prevLabel = `${MONTH_NAMES_SHORT[prevMonthDate.getMonth()]} ${prevMonthDate.getFullYear()}`;
+      } else if (periodFilter === 'year') {
+        const isCurrentYear = chartSelectedYear === now.getFullYear();
+        start = new Date(chartSelectedYear, 0, 1, 0, 0, 0, 0);
+        if (isCurrentYear) {
+          end = endOfToday;
+          daysCount = Math.max(1, Math.round((end.getTime() - start.getTime() + 1) / 86400000));
+        } else {
+          end = new Date(chartSelectedYear, 11, 31, 23, 59, 59, 999);
+          const isLeap = (chartSelectedYear % 4 === 0 && (chartSelectedYear % 100 !== 0 || chartSelectedYear % 400 === 0));
+          daysCount = isLeap ? 366 : 365;
+        }
+        prevStart = new Date(chartSelectedYear - 1, 0, 1, 0, 0, 0, 0);
+        prevEnd = new Date(chartSelectedYear - 1, 11, 31, 23, 59, 59, 999);
+        label = `Tahun ${chartSelectedYear}`;
+        prevLabel = `Tahun ${chartSelectedYear - 1}`;
+      } else {
+        const sParts = (chartCustomStart || firstDayMonth).split('-').map(Number);
+        const eParts = (chartCustomEnd || todayStr).split('-').map(Number);
+        start = new Date(sParts[0], sParts[1] - 1, sParts[2], 0, 0, 0, 0);
+        end = new Date(eParts[0], eParts[1] - 1, eParts[2], 23, 59, 59, 999);
+        if (end < start) end = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59, 59, 999);
+        const spanMs = end.getTime() - start.getTime() + 1;
+        daysCount = Math.max(1, Math.round(spanMs / 86400000));
+        prevEnd = new Date(start.getTime() - 1);
+        prevStart = new Date(prevEnd.getTime() - spanMs + 1);
+        label = `${chartCustomStart} s/d ${chartCustomEnd}`;
+        prevLabel = 'rentang sblmnya';
+      }
+
+      return { start, end, prevStart, prevEnd, daysCount, label, prevLabel };
+    }
+
+    function processIncomingNotification(pkg, title, text) {
+      if (!state.settings.autoTrackingEnabled) return showToast('Mode Auto-Track sedang OFF');
+      if (state.wallets.length === 0) return showToast('Tambahkan akun Bank/E-Wallet dulu di Beranda');
+
+      const full = `${title} ${text}`;
+      if (/(otp|pin|cvv|kode verifikasi|rahasia|gagal|dibatalkan|ditolak)/i.test(full)) return;
+
+      const amtMatch = full.match(/(?:rp\.?\s*)([\d.,]+)/i);
+      if (!amtMatch) {
+        state.unparsedLogs.unshift({ id: 'unp_' + Date.now(), rawText: full });
+        saveState();
+        showToast('Notifikasi masuk ke kotak gagal baca');
+        return;
+      }
+      const amount = parseInt(amtMatch[1].replace(/,00$/, '').replace(/[.,]/g, ''), 10);
+
+      if (pkg.includes('shopee') || pkg.includes('tokopedia')) {
+        const existing = state.transactions.find(t => t.type === 'expense' && t.amount === amount);
+        if (existing) {
+          existing.title = `${title}: ${text.slice(0, 34)}`;
+          saveState();
+          showToast('Judul transaksi diperkaya dari notif e-commerce');
+        }
+        return;
+      }
+
+      if (/(transfer ke|top up|tarik tunai)/i.test(full)) {
+        const fromW = state.wallets.find(w => full.toLowerCase().includes(w.name.toLowerCase())) || state.wallets[0];
+        const toW = full.toLowerCase().includes('tarik tunai')
+          ? state.wallets.find(w => w.category === 'cash')
+          : state.wallets.find(w => w.id !== fromW.id && full.toLowerCase().includes(w.name.toLowerCase()));
+        if (fromW && toW) {
+          const tx = { id: 'tx_' + Date.now(), walletId: fromW.id, targetWalletId: toW.id, type: 'transfer', amount, title: `Transfer: ${fromW.name} → ${toW.name}`, category: 'Transfer', isAuto: true, createdAt: new Date().toISOString() };
+          applyWalletEffect(tx);
+          state.transactions.unshift(tx);
+          saveState();
+          showToast('Transfer antar dompet dicatat otomatis');
+          return;
+        }
+      }
+
+      const wallet = state.wallets.find(w => full.toLowerCase().includes(w.name.toLowerCase())) || state.wallets[0];
+      const isIncome = /(transfer masuk|menerima|uang masuk|gaji)/i.test(full);
+      const merchant = full.match(/(?:\bdi\b|\bke\b)\s+([A-Za-z0-9\s.&'-]{2,26})/i);
+      const txTitle = merchant ? merchant[1].trim() : (isIncome ? `Dana Masuk (${wallet.name})` : `Transaksi (${wallet.name})`);
+      const autoCat = isIncome ? 'Gaji & Uang Saku' : autoCategory(txTitle);
+      const tx = {
+        id: 'tx_' + Date.now(),
+        walletId: wallet.id,
+        type: isIncome ? 'income' : 'expense',
+        amount,
+        title: autoCat === 'Lainnya' ? `Lainnya — ${txTitle}` : txTitle,
+        category: autoCat,
+        isAuto: true,
+        createdAt: new Date().toISOString()
+      };
+      applyWalletEffect(tx);
+      state.transactions.unshift(tx);
+      saveState();
+      showToast(`Tercatat otomatis: ${txTitle} (${rp(amount)})`);
+    }
+
+    function renderClusterSection(categoryKey, titleLabel) {
+      const list = state.wallets.filter(w => w.category === categoryKey);
+      const subtotal = list.reduce((s, w) => s + w.balance, 0);
+      const isEdit = clusterEditMode[categoryKey];
+
+      return `
+        <div class="cluster-box ${isEdit ? 'editing' : ''}">
+          <div class="cluster-head">
+            <div>
+              <span class="cluster-title">${titleLabel}</span>
+              <span class="cluster-sub">${rp(subtotal)}</span>
+            </div>
+            <button class="edit-mode-btn ${isEdit ? 'active' : ''}" data-action="toggle-cluster-edit" data-cluster="${categoryKey}">
+              ${isEdit ? '✓ Selesai' : '✎ Mode Edit'}
+            </button>
+          </div>
+          ${list.length === 0 && !isEdit ? `
+            <div class="empty-hint">Belum ada akun ${titleLabel}. Klik <b>Mode Edit</b> untuk menambahkan.</div>
+          ` : `
+            <div class="wallets-grid">
+              ${list.map(w => `
+                <div class="wallet-card ${isEdit ? 'unlocked' : 'locked'}" data-action="click-wallet" data-id="${w.id}" data-cluster="${categoryKey}">
+                  <div class="wallet-top">
+                    <span>${esc(w.name)}</span>
+                    <span>${isEdit ? '✎' : '🔒'}</span>
+                  </div>
+                  <div class="wallet-bal">${rp(w.balance)}</div>
+                </div>
+              `).join('')}
+              ${isEdit ? `
+                <button class="add-wallet-slot" data-action="add-cluster-wallet" data-cluster="${categoryKey}">
+                  + Tambah ${titleLabel}
+                </button>
+              ` : ''}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderChartSection(win, windowAllFlowTxs, activeList, total, rows) {
+      if (chartViewMode === 'donut') {
+        const radius = 44;
+        const circumference = 2 * Math.PI * radius;
+        let offsetAcc = 0;
+
+        const segmentsSvg = rows.length === 0
+          ? `<circle cx="60" cy="60" r="${radius}" fill="none" stroke="#1e293b" stroke-width="14" />`
+          : rows.map(([cat, amt], idx) => {
+              const pct = total > 0 ? amt / total : 0;
+              const segLen = pct * circumference;
+              const color = CHART_COLORS[idx % CHART_COLORS.length];
+              const el = `<circle cx="60" cy="60" r="${radius}" fill="none" stroke="${color}" stroke-width="14"
+                stroke-dasharray="${segLen} ${circumference}"
+                stroke-dashoffset="${-offsetAcc}"
+                transform="rotate(-90 60 60)" />`;
+              offsetAcc += segLen;
+              return el;
+            }).join('');
+
+        const drillTxs = drilldownCat ? activeList.filter(t => t.category === drilldownCat) : [];
+
+        return `
+          <div class="card">
+            <div class="donut-wrap">
+              <div class="donut-box">
+                <svg viewBox="0 0 120 120" width="118" height="118">${segmentsSvg}</svg>
+                <div class="donut-center">
+                  <span style="font-size:9px; color:var(--muted); text-transform:uppercase;">${chartType === 'expense' ? 'Keluar' : 'Masuk'}</span>
+                  <b style="font-size:12px; margin-top:2px;">${rpCompact(total)}</b>
+                  <span style="font-size:9px; color:var(--muted);">${activeList.length} tx</span>
+                </div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <span class="label-xs">Ringkasan • ${esc(win.label)}</span>
+                <div style="font-size:17px; font-weight:800; margin:4px 0;">${rp(total)}</div>
+                <p style="font-size:11px; color:var(--muted); line-height:1.35;">
+                  ${rows.length === 0 ? 'Belum ada transaksi arus kas pada waktu terpilih.' : 'Ketuk kategori di bawah untuk melihat rincian transaksinya.'}
+                </p>
+              </div>
+            </div>
+
+            ${rows.length > 0 ? `
+              <div style="display:flex; flex-direction:column; gap:4px; border-top:1px solid var(--border); padding-top:10px;">
+                ${rows.map(([cat, amt], idx) => {
+                  const pct = total > 0 ? (amt / total) * 100 : 0;
+                  const color = CHART_COLORS[idx % CHART_COLORS.length];
+                  const isOpen = drilldownCat === cat;
+                  return `
+                    <div>
+                      <button class="cat-row-btn ${isOpen ? 'active' : ''}" data-action="drill-cat" data-cat="${esc(cat)}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                          <span style="display:flex; align-items:center; gap:6px;">
+                            <span style="width:9px; height:9px; border-radius:3px; background:${color}; display:inline-block;"></span>
+                            <b>${esc(cat)}</b>
+                          </span>
+                          <span><b>${rp(amt)}</b> <span style="color:var(--muted); font-size:11px;">(${pct.toFixed(1)}%) ${isOpen ? '▴' : '▾'}</span></span>
+                        </div>
+                        <div class="bar-bg" style="margin-bottom:2px;"><div class="bar-fill" style="width:${pct}%; background:${color};"></div></div>
+                      </button>
+                      ${isOpen ? `
+                        <div class="drill-box">
+                          <div style="font-size:10px; color:var(--muted); font-weight:700; margin-bottom:6px;">RINCIAN ${esc(cat).toUpperCase()} (${drillTxs.length} TRANSAKSI)</div>
+                          ${drillTxs.map(tx => {
+                            const w = state.wallets.find(x => x.id === tx.walletId);
+                            return `
+                              <div style="display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid rgba(30,41,59,0.5);">
+                                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;">${esc(tx.title)} <span style="color:var(--muted);">(${esc(w ? w.name : '-')})</span></span>
+                                <b>${rp(tx.amount)}</b>
+                              </div>
+                            `;
+                          }).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      if (chartViewMode === 'trend') {
+        const buckets = [];
+        if (periodFilter === 'year') {
+          const yr = chartSelectedYear;
+          for (let m = 0; m < 12; m++) {
+            const bTxs = windowAllFlowTxs.filter(t => {
+              const d = new Date(t.createdAt);
+              return d.getFullYear() === yr && d.getMonth() === m;
+            });
+            buckets.push({
+              label: MONTH_NAMES_SHORT[m],
+              inc: bTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+              exp: bTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+            });
+          }
+        } else {
+          const maxBars = Math.min(win.daysCount, 12);
+          const stepMs = (win.end.getTime() - win.start.getTime() + 1) / maxBars;
+          for (let i = 0; i < maxBars; i++) {
+            const bStart = win.start.getTime() + i * stepMs;
+            const bEnd = bStart + stepMs - 1;
+            const dObj = new Date(bStart);
+            const lbl = `${dObj.getDate()}/${dObj.getMonth() + 1}`;
+            const bTxs = windowAllFlowTxs.filter(t => {
+              const ts = new Date(t.createdAt).getTime();
+              return ts >= bStart && ts <= bEnd;
+            });
+            buckets.push({
+              label: lbl,
+              inc: bTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+              exp: bTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+            });
+          }
+        }
+
+        const maxVal = Math.max(1, ...buckets.map(b => Math.max(b.inc, b.exp)));
+        const svgW = 360;
+        const svgH = 145;
+        const chartH = 112;
+        const slotW = svgW / buckets.length;
+
+        const barsSvg = buckets.map((b, i) => {
+          const xBase = i * slotW + slotW * 0.16;
+          const barW = Math.max(4, slotW * 0.3);
+          const incH = (b.inc / maxVal) * chartH;
+          const expH = (b.exp / maxVal) * chartH;
+          return `
+            <rect x="${xBase}" y="${chartH - incH + 6}" width="${barW}" height="${Math.max(incH, b.inc > 0 ? 3 : 0)}" rx="2" fill="#10b981" />
+            <rect x="${xBase + barW + 2}" y="${chartH - expH + 6}" width="${barW}" height="${Math.max(expH, b.exp > 0 ? 3 : 0)}" rx="2" fill="#f43f5e" />
+            <text x="${i * slotW + slotW / 2}" y="${svgH - 4}" text-anchor="middle" fill="#94a3b8" font-size="9">${b.label}</text>
+          `;
+        }).join('');
+
+        const totalIncWin = windowAllFlowTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const totalExpWin = windowAllFlowTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+        return `
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span class="label-xs">Tren Arus Kas • ${esc(win.label)}</span>
+              <div style="display:flex; gap:10px; font-size:10px; font-weight:700;">
+                <span style="color:var(--green);">■ Masuk</span>
+                <span style="color:var(--red);">■ Keluar</span>
+              </div>
+            </div>
+
+            <div style="background:var(--bg); border-radius:14px; padding:10px 6px 4px; overflow-x:auto;">
+              <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="150">
+                <line x1="0" y1="${chartH + 6}" x2="${svgW}" y2="${chartH + 6}" stroke="#1e293b" stroke-width="1" />
+                ${barsSvg}
+              </svg>
+            </div>
+
+            <div class="grid-3" style="margin-top:12px;">
+              <div><span style="color:var(--muted)">Total Masuk</span><b style="color:var(--green)">${rp(totalIncWin)}</b></div>
+              <div><span style="color:var(--muted)">Total Keluar</span><b style="color:var(--red)">${rp(totalExpWin)}</b></div>
+              <div style="text-align:right;"><span style="color:var(--muted)">Selisih</span><b style="color:${totalIncWin - totalExpWin >= 0 ? 'var(--green)' : 'var(--red)'}">${rp(totalIncWin - totalExpWin)}</b></div>
+            </div>
+          </div>
+        `;
+      }
+
+      const clusterMap = { bank: { label: 'Bank', count: 0, amt: 0 }, ewallet: { label: 'E-Wallet', count: 0, amt: 0 }, cash: { label: 'Fisik / Cash', count: 0, amt: 0 } };
+      activeList.forEach(t => {
+        const w = state.wallets.find(x => x.id === t.walletId);
+        const key = w ? w.category : 'cash';
+        if (clusterMap[key]) {
+          clusterMap[key].count += 1;
+          clusterMap[key].amt += t.amount;
+        }
+      });
+      const clusterRows = Object.values(clusterMap).filter(c => c.count > 0).sort((a, b) => b.amt - a.amt);
+
+      return `
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span class="label-xs">Tabel Kategori • ${esc(win.label)}</span>
+            <b style="font-size:12px;">${rp(total)}</b>
+          </div>
+          ${rows.length === 0 ? '<p style="font-size:12px; color:var(--muted); text-align:center; padding:16px 0;">Belum ada data pada waktu terpilih.</p>' : `
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Kategori</th>
+                  <th class="num-col">Tx</th>
+                  <th class="num-col">Nominal</th>
+                  <th class="num-col">Porsi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(([cat, amt]) => {
+                  const cnt = activeList.filter(t => t.category === cat).length;
+                  const pct = total > 0 ? (amt / total) * 100 : 0;
+                  return `
+                    <tr>
+                      <td><b>${esc(cat)}</b></td>
+                      <td class="num-col" style="color:var(--muted);">${cnt}x</td>
+                      <td class="num-col"><b>${rp(amt)}</b></td>
+                      <td class="num-col" style="color:var(--green);">${pct.toFixed(1)}%</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+
+        <div class="card">
+          <div style="margin-bottom:8px;">
+            <span class="label-xs">Tabel Distribusi per Kluster Dompet</span>
+          </div>
+          ${clusterRows.length === 0 ? '<p style="font-size:12px; color:var(--muted); text-align:center; padding:12px 0;">Belum ada data kanal dompet.</p>' : `
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Kluster Saldo</th>
+                  <th class="num-col">Tx</th>
+                  <th class="num-col">Total</th>
+                  <th class="num-col">Porsi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${clusterRows.map(c => {
+                  const pct = total > 0 ? (c.amt / total) * 100 : 0;
+                  return `
+                    <tr>
+                      <td><b>${esc(c.label)}</b></td>
+                      <td class="num-col" style="color:var(--muted);">${c.count}x</td>
+                      <td class="num-col"><b>${rp(c.amt)}</b></td>
+                      <td class="num-col" style="color:var(--blue);">${pct.toFixed(1)}%</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      const autoBtn = document.getElementById('btn-auto-toggle');
+      autoBtn.classList.toggle('active', state.settings.autoTrackingEnabled);
+      document.getElementById('auto-label').textContent = state.settings.autoTrackingEnabled ? 'Auto: ON' : 'Manual';
+      const badge = document.getElementById('unparsed-badge');
+      badge.style.display = state.unparsedLogs.length ? 'grid' : 'none';
+      badge.textContent = state.unparsedLogs.length;
+
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+
+      const container = document.getElementById('screen-container');
+      const totalBank = state.wallets.filter(w => w.category === 'bank').reduce((s, w) => s + w.balance, 0);
+      const totalEw = state.wallets.filter(w => w.category === 'ewallet').reduce((s, w) => s + w.balance, 0);
+      const totalCash = state.wallets.filter(w => w.category === 'cash').reduce((s, w) => s + w.balance, 0);
+      const totalAll = totalBank + totalEw + totalCash;
+
+      // 1. TAB BERANDA
+      if (activeTab === 'home') {
+        const cashWallets = state.wallets.filter(w => w.category === 'cash');
+
+        container.innerHTML = `
+          <section class="card hero">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="label-xs">Total Uang Dipegang Saat Ini</span>
+              <button class="act-icon" style="color:#cbd5e1;" data-action="toggle-hide">${state.settings.hideBalance ? '🙈' : '👁️'}</button>
+            </div>
+            <div class="hero-amount">${rp(totalAll)}</div>
+            <div class="grid-3">
+              <div><span style="color:var(--muted)">Total Bank</span><b>${rp(totalBank)}</b></div>
+              <div><span style="color:var(--muted)">Total E-Wallet</span><b>${rp(totalEw)}</b></div>
+              <div><span style="color:var(--muted)">Total Fisik</span><b style="color:#6ee7b7">${rp(totalCash)}</b></div>
+            </div>
+          </section>
+
+          <section style="display:flex; flex-direction:column; gap:10px;">
+            <div class="label-xs">Kluster Saldo</div>
+            ${renderClusterSection('bank', 'Bank')}
+            ${renderClusterSection('ewallet', 'E-Wallet')}
+            ${renderClusterSection('cash', 'Fisik / Cash')}
+          </section>
+
+          <section class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; font-weight:700; color:#6ee7b7;">⚡ Catat Uang Fisik Cepat</span>
+              ${cashWallets.length > 1 ? `
+                <select id="quick-cash-wallet" style="width:auto; padding:4px 8px; font-size:11px;">
+                  ${cashWallets.map(cw => `<option value="${cw.id}">${esc(cw.name)}</option>`).join('')}
+                </select>
+              ` : `<span style="font-size:10px; color:var(--muted);">${cashWallets[0] ? esc(cashWallets[0].name) : 'Belum ada dompet fisik'}</span>`}
+            </div>
+
+            ${cashWallets.length === 0 ? `
+              <p class="empty-hint" style="margin-top:8px;">Tambahkan dompet di kluster <b>Fisik / Cash</b> terlebih dahulu untuk mencatat pengeluaran tunai.</p>
+            ` : `
+              <form id="quick-cash-form">
+                <div class="cash-fields">
+                  <div>
+                    <label class="field-label" for="cash-desc-inp">Untuk apa pengeluarannya?</label>
+                    <input id="cash-desc-inp" type="text" required placeholder="Contoh: Es teh, parkir..." />
+                  </div>
+                  <div>
+                    <label class="field-label" for="cash-amt-inp">Nominal (Rp)</label>
+                    <input id="cash-amt-inp" type="number" min="1" required placeholder="8000" />
+                  </div>
+                </div>
+                <div class="presets">
+                  ${[2000, 5000, 10000, 20000].map(p => `<button type="button" class="preset-btn" data-action="fill-cash-amt" data-amt="${p}">${p.toLocaleString('id-ID')}</button>`).join('')}
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;">Catat Pengeluaran Tunai</button>
+              </form>
+            `}
+          </section>
+        `;
+
+        const qForm = document.getElementById('quick-cash-form');
+        if (qForm) {
+          qForm.onsubmit = (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('cash-desc-inp').value.trim();
+            const amount = parseInt(document.getElementById('cash-amt-inp').value, 10);
+            if (!desc) return showToast('Isi keterangan pengeluaran terlebih dahulu');
+            if (!amount || amount <= 0) return showToast('Masukkan nominal pengeluaran yang valid');
+
+            const walletSelect = document.getElementById('quick-cash-wallet');
+            const targetCashId = walletSelect ? walletSelect.value : cashWallets[0].id;
+            const cat = autoCategory(desc);
+            const title = cat === 'Lainnya' ? `Lainnya: ${desc}` : desc;
+
+            const tx = {
+              id: 'tx_' + Date.now(),
+              walletId: targetCashId,
+              type: 'expense',
+              amount,
+              title,
+              category: cat,
+              isAuto: false,
+              createdAt: new Date().toISOString()
+            };
+            applyWalletEffect(tx);
+            state.transactions.unshift(tx);
+            saveState();
+            showToast(`Tercatat: ${desc} (${rp(amount)})`);
+          };
+        }
+      }
+
+      // 2. TAB LAPORAN (RIWAYAT + GRAFIK)
+      if (activeTab === 'report') {
+        const subSwitchHtml = `
+          <div class="seg-tabs" style="padding:4px;">
+            <button class="seg-btn ${reportSubTab === 'history' ? 'active' : ''}" data-action="report-sub-tab" data-val="history">🧾 Riwayat Mutasi</button>
+            <button class="seg-btn ${reportSubTab === 'chart' ? 'active' : ''}" data-action="report-sub-tab" data-val="chart">📊 Analisis & Grafik</button>
+          </div>
+        `;
+
+        if (reportSubTab === 'history') {
+          const filteredTxs = state.transactions.filter(tx => {
+            if (historyTypeFilter !== 'ALL' && tx.type !== historyTypeFilter) return false;
+            if (historyWalletFilter !== 'ALL' && tx.walletId !== historyWalletFilter && tx.targetWalletId !== historyWalletFilter) return false;
+            return true;
+          });
+
+          container.innerHTML = `
+            ${subSwitchHtml}
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <b style="font-size:14px;">Riwayat Transaksi</b>
+                <span style="display:block; font-size:11px; color:var(--muted);">Arus kas & log sinkronisasi saldo</span>
+              </div>
+              <select style="width:auto; padding:6px 9px; font-size:11px;" data-action="history-wallet-filter">
+                <option value="ALL">Semua Dompet</option>
+                ${state.wallets.map(w => `<option value="${w.id}" ${historyWalletFilter === w.id ? 'selected' : ''}>${esc(w.name)}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="seg-tabs">
+              ${[['ALL','Semua'],['expense','Keluar'],['income','Masuk'],['transfer','Transfer'],['sync','Sync']].map(([k, lbl]) =>
+                `<button class="seg-btn ${historyTypeFilter === k ? 'active-sub' : ''}" data-action="history-type-filter" data-val="${k}">${lbl}</button>`
+              ).join('')}
+            </div>
+
+            <div class="tx-list">
+              ${filteredTxs.length === 0 ? `
+                <div class="card" style="text-align:center; padding:28px 16px; color:#64748b; font-size:12px;">
+                  Belum ada catatan riwayat pada filter ini.
+                </div>
+              ` : filteredTxs.map(tx => {
+                const w = state.wallets.find(x => x.id === tx.walletId);
+                const isSync = tx.type === 'sync';
+                const cls = isSync ? 'amt-sync' : tx.type === 'income' ? 'amt-in' : tx.type === 'transfer' ? 'amt-trf' : 'amt-out';
+                const prefix = isSync ? (tx.syncDiff >= 0 ? '+' : '-') : tx.type === 'income' ? '+' : tx.type === 'transfer' ? '⇄ ' : '-';
+                return `
+                  <div class="tx-item ${isSync ? 'sync-row' : ''}">
+                    <div style="min-width:0;">
+                      <div class="tx-title">
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(tx.title)}</span>
+                        ${isSync
+                          ? '<span class="badge-mode badge-sync">SYNC</span>'
+                          : `<span class="badge-mode ${tx.isAuto ? 'badge-auto' : 'badge-manual'}">${tx.isAuto ? 'AUTO' : 'MANUAL'}</span>`
+                        }
+                        ${tx.isEdited ? '<span class="badge-mode badge-edited">DIEDIT</span>' : ''}
+                      </div>
+                      <div class="tx-meta">
+                        <span>${esc(w ? w.name : '')}</span> •
+                        <span>${isSync ? 'Koreksi saldo' : esc(tx.category)}</span> •
+                        <span>${formatTimeShort(tx.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:2px; flex-shrink:0;">
+                      <span class="${cls}" style="margin-right:4px;">${prefix}${rp(tx.amount)}</span>
+                      ${!isSync ? `<button class="act-icon" title="Edit transaksi" data-action="edit-tx" data-id="${tx.id}">✎</button>` : ''}
+                      <button class="act-icon del" title="Hapus" data-action="confirm-delete-tx" data-id="${tx.id}">🗑</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        } else {
+          const win = getChartDateWindow();
+          const availYears = getAvailableYears();
+
+          const windowAllFlowTxs = state.transactions.filter(t => {
+            if (t.type !== 'expense' && t.type !== 'income') return false;
+            if (walletFilter !== 'ALL' && t.walletId !== walletFilter) return false;
+            const ts = new Date(t.createdAt).getTime();
+            return ts >= win.start.getTime() && ts <= win.end.getTime();
+          });
+
+          const activeList = windowAllFlowTxs.filter(t => t.type === chartType);
+          const total = activeList.reduce((s, t) => s + t.amount, 0);
+          const dailyAvg = total / win.daysCount;
+
+          const prevTotal = state.transactions
+            .filter(t => {
+              if (t.type !== chartType) return false;
+              if (walletFilter !== 'ALL' && t.walletId !== walletFilter) return false;
+              const ts = new Date(t.createdAt).getTime();
+              return ts >= win.prevStart.getTime() && ts <= win.prevEnd.getTime();
+            })
+            .reduce((s, t) => s + t.amount, 0);
+
+          let compBadgeClass = 'trend-neutral';
+          let compText = 'Sama vs ' + win.prevLabel;
+          if (prevTotal === 0 && total > 0) {
+            compBadgeClass = chartType === 'expense' ? 'trend-bad' : 'trend-good';
+            compText = `Baru (${win.prevLabel}: Rp 0)`;
+          } else if (prevTotal > 0) {
+            const diffPct = ((total - prevTotal) / prevTotal) * 100;
+            if (Math.abs(diffPct) < 0.5) {
+              compText = `Stabil vs ${win.prevLabel}`;
+            } else if (chartType === 'expense') {
+              compBadgeClass = diffPct < 0 ? 'trend-good' : 'trend-bad';
+              compText = diffPct < 0
+                ? `↓ ${Math.abs(diffPct).toFixed(1)}% lebih hemat`
+                : `↑ ${diffPct.toFixed(1)}% lebih boros`;
+            } else {
+              compBadgeClass = diffPct > 0 ? 'trend-good' : 'trend-bad';
+              compText = diffPct > 0
+                ? `↑ ${diffPct.toFixed(1)}% naik`
+                : `↓ ${Math.abs(diffPct).toFixed(1)}% turun`;
+            }
+          }
+
+          const byCat = {};
+          activeList.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
+          const rows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+
+          container.innerHTML = `
+            ${subSwitchHtml}
+
+            <div class="seg-tabs">
+              <button class="seg-btn ${chartType === 'expense' ? 'active-sub' : ''}" data-action="chart-type" data-val="expense">Pengeluaran</button>
+              <button class="seg-btn ${chartType === 'income' ? 'active-sub' : ''}" data-action="chart-type" data-val="income">Pemasukan</button>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+              <div class="seg-tabs" style="flex:1;">
+                ${[['week','7 Hari'],['month','Per Bulan'],['year','Per Tahun'],['custom','Tanggal']].map(([k,lbl]) =>
+                  `<button class="seg-btn ${periodFilter === k ? 'active-sub' : ''}" data-action="period-filter" data-val="${k}">${lbl}</button>`
+                ).join('')}
+              </div>
+              <select style="width:auto; padding:6px 8px;" data-action="wallet-filter">
+                <option value="ALL">Semua Dompet</option>
+                ${state.wallets.map(w => `<option value="${w.id}" ${walletFilter === w.id ? 'selected' : ''}>${esc(w.name)}</option>`).join('')}
+              </select>
+            </div>
+
+            ${periodFilter === 'month' ? `
+              <div class="time-picker-bar">
+                <span class="label-xs" style="white-space:nowrap;">📅 Pilih Bulan:</span>
+                <div style="display:flex; gap:6px; flex:1; justify-content:flex-end;">
+                  <select style="width:auto; min-width:112px;" data-action="chart-select-month">
+                    ${MONTH_NAMES.map((mName, mIdx) => `<option value="${mIdx}" ${chartSelectedMonth === mIdx ? 'selected' : ''}>${mName}</option>`).join('')}
+                  </select>
+                  <select style="width:auto; min-width:80px;" data-action="chart-select-year">
+                    ${availYears.map(y => `<option value="${y}" ${chartSelectedYear === y ? 'selected' : ''}>${y}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+            ` : ''}
+
+            ${periodFilter === 'year' ? `
+              <div class="time-picker-bar">
+                <span class="label-xs" style="white-space:nowrap;">📅 Pilih Tahun:</span>
+                <select style="width:auto; min-width:100px;" data-action="chart-select-year">
+                  ${availYears.map(y => `<option value="${y}" ${chartSelectedYear === y ? 'selected' : ''}>${y}</option>`).join('')}
+                </select>
+              </div>
+            ` : ''}
+
+            ${periodFilter === 'custom' ? `
+              <div class="card" style="padding:10px 12px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div>
+                  <span class="field-label">Dari Tanggal</span>
+                  <input type="date" value="${chartCustomStart}" data-action="chart-date-start" style="padding:6px 8px;" />
+                </div>
+                <div>
+                  <span class="field-label">Sampai Tanggal</span>
+                  <input type="date" value="${chartCustomEnd}" data-action="chart-date-end" style="padding:6px 8px;" />
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="grid-2">
+              <div class="kpi-card">
+                <span class="label-xs">Rata-Rata / Hari</span>
+                <div class="kpi-val">${rp(dailyAvg)}</div>
+                <span class="kpi-sub">Total ÷ ${win.daysCount} hari</span>
+              </div>
+              <div class="kpi-card">
+                <span class="label-xs">vs ${esc(win.prevLabel)}</span>
+                <div><span class="trend-pill ${compBadgeClass}">${compText}</span></div>
+                <span class="kpi-sub">Sebelumnya: ${rp(prevTotal)}</span>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="label-xs">Tampilan Analisis</span>
+              <div class="seg-tabs" style="width:auto; padding:3px;">
+                ${[['donut','🍩 Donut'],['trend','📊 Tren'],['table','📋 Tabel']].map(([m, lbl]) =>
+                  `<button class="seg-btn ${chartViewMode === m ? 'active-sub' : ''}" style="padding:5px 10px;" data-action="chart-view" data-val="${m}">${lbl}</button>`
+                ).join('')}
+              </div>
+            </div>
+
+            ${renderChartSection(win, windowAllFlowTxs, activeList, total, rows)}
+          `;
+        }
+      }
+
+      // 3. TAB BUDGET
+      if (activeTab === 'budget') {
+        const pKey = state.activeBudgetPeriod;
+        const pCfg = state.budgetsByPeriod[pKey];
+
+        const linkedWallets = state.wallets.filter(w => pCfg.includedWalletIds.includes(w.id));
+        const linkedBalance = linkedWallets.reduce((s, w) => s + w.balance, 0);
+
+        const allocEntries = Object.entries(pCfg.allocations).filter(([, item]) => item && item.limit > 0);
+        const totalAllocated = allocEntries.reduce((s, [, item]) => s + item.limit, 0);
+        const unallocatedSaldo = linkedBalance - totalAllocated;
+
+        const periodExpenses = state.transactions.filter(t =>
+          t.type === 'expense' &&
+          pCfg.includedWalletIds.includes(t.walletId) &&
+          isTxInPeriod(t, pKey, pCfg)
+        );
+
+        const totalAllocatedSpent = allocEntries.reduce((sum, [cat]) => {
+          const catSpent = periodExpenses.filter(t => t.category === cat).reduce((s, t) => s + t.amount, 0);
+          return sum + catSpent;
+        }, 0);
+
+        const unbudgetedSpent = periodExpenses
+          .filter(t => !pCfg.allocations[t.category] || pCfg.allocations[t.category].limit <= 0)
+          .reduce((s, t) => s + t.amount, 0);
+
+        const overallStatus = getBudgetUsageStatus(totalAllocatedSpent, totalAllocated);
+
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="label-xs">Kategori Periode Budget</span>
+            <button class="btn-secondary" data-action="open-budget-settings">⚙️ Atur Pembagian</button>
+          </div>
+          <div class="seg-tabs">
+            ${[['daily','Hari'],['weekly','Pekan'],['monthly','Bulan'],['yearly','Tahun'],['custom','Periode']].map(([k, lbl]) =>
+              `<button class="seg-btn ${pKey === k ? 'active' : ''}" data-action="switch-budget-period" data-period="${k}">${lbl}</button>`
+            ).join('')}
+          </div>
+
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="label-xs">Sumber Saldo Terhubung (${getPeriodLabel(pKey, pCfg)})</span>
+            </div>
+            ${state.wallets.length === 0 ? `
+              <p class="empty-hint" style="margin-top:6px;">Belum ada dompet. Tambahkan akun Bank / E-Wallet / Fisik di Beranda untuk menghubungkan saldo ke budget.</p>
+            ` : `
+              <div class="scope-chips">
+                ${state.wallets.map(w => {
+                  const active = pCfg.includedWalletIds.includes(w.id);
+                  return `<button class="scope-chip ${active ? 'active' : ''}" data-action="toggle-budget-wallet" data-wid="${w.id}">${active ? '✓' : '+'} ${esc(w.name)} (${rp(w.balance)})</button>`;
+                }).join('')}
+              </div>
+            `}
+
+            <div class="grid-3" style="margin-top:12px;">
+              <div>
+                <span style="color:var(--muted)">Saldo Terhubung</span>
+                <b style="color:var(--text)">${rp(linkedBalance)}</b>
+              </div>
+              <div>
+                <span style="color:var(--muted)">Dibagi ke Budget</span>
+                <b style="color:var(--blue)">${rp(totalAllocated)}</b>
+              </div>
+              <div style="text-align:right;">
+                <span style="color:var(--muted)">Saldo Bebas</span>
+                <b style="color:${unallocatedSaldo < 0 ? 'var(--red)' : 'var(--green)'}">${rp(unallocatedSaldo)}</b>
+              </div>
+            </div>
+
+            ${unallocatedSaldo < 0 ? `
+              <div class="warn-banner" style="margin-top:10px;">
+                ⚠️ Total alokasi budget periode ini melebihi saldo dompet terhubung sebesar <b>${rp(Math.abs(unallocatedSaldo))}</b>. Sesuaikan pembagian atau aktifkan sumber dompet lain.
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <b style="font-size:14px;">Total Anggaran ${getPeriodLabel(pKey, pCfg)}</b>
+                <span style="display:block; font-size:10px; color:var(--muted);">Akumulasi seluruh pos kebutuhan pada periode ini</span>
+              </div>
+              <span style="font-size:11px; font-weight:700; color:${overallStatus.color};">${overallStatus.text}</span>
+            </div>
+            <div class="bar-bg" style="height:10px; margin:10px 0;">
+              <div class="bar-fill" style="width:${overallStatus.pct}%; background:${overallStatus.barColor};"></div>
+            </div>
+            <div class="grid-3" style="border:none; padding:0;">
+              <div><span style="color:var(--muted)">Total Pos</span><b>${rp(totalAllocated)}</b></div>
+              <div><span style="color:var(--muted)">Terpakai</span><b style="color:var(--red)">${rp(totalAllocatedSpent)}</b></div>
+              <div style="text-align:right;"><span style="color:var(--muted)">Sisa Pos</span><b style="color:${totalAllocated - totalAllocatedSpent < 0 ? 'var(--red)' : 'var(--green)'}">${rp(totalAllocated - totalAllocatedSpent)}</b></div>
+            </div>
+            ${unbudgetedSpent > 0 ? `
+              <div style="margin-top:10px; padding-top:8px; border-top:1px solid var(--border); font-size:11px; color:var(--muted); display:flex; justify-content:space-between;">
+                <span>Pengeluaran di luar pos anggaran periode ini:</span>
+                <b style="color:#cbd5e1;">${rp(unbudgetedSpent)}</b>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="label-xs">Pembagian Kebutuhan (${getPeriodLabel(pKey, pCfg)})</span>
+            <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" data-action="open-budget-settings">+ Atur Pos</button>
+          </div>
+
+          ${allocEntries.length === 0 ? `
+            <div class="card" style="text-align:center; padding:18px; color:#64748b; font-size:12px; line-height:1.5;">
+              Belum ada pembagian anggaran untuk <b>${getPeriodLabel(pKey, pCfg)}</b>.<br>Klik <b>Atur Pembagian</b> untuk menentukan pos kebutuhan & tujuan pemakaiannya.
+            </div>
+          ` : allocEntries.map(([cat, item]) => {
+            const spent = periodExpenses.filter(t => t.category === cat).reduce((s, t) => s + t.amount, 0);
+            const st = getBudgetUsageStatus(spent, item.limit);
+            return `
+              <div class="card" style="padding:12px 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                  <div>
+                    <b style="font-size:13px;">${esc(cat)}</b>
+                    ${item.note ? `<span style="display:block; font-size:11px; color:var(--muted); margin-top:2px;">Untuk: ${esc(item.note)}</span>` : ''}
+                  </div>
+                  <span style="color:${st.color}; font-size:11px; font-weight:700; white-space:nowrap;">${st.text}</span>
+                </div>
+                <div class="bar-bg"><div class="bar-fill" style="width:${st.pct}%; background:${st.barColor};"></div></div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted);">
+                  <span>Terpakai: ${rp(spent)}</span><span>Batas Pos: ${rp(item.limit)}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        `;
+      }
+
+      // 4. TAB CATATAN KEUANGAN
+      if (activeTab === 'notes') {
+        const openNotes = state.notes.filter(n => !n.isDone);
+        const totalOpenNominal = openNotes.reduce((s, n) => s + (n.amount || 0), 0);
+
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <b style="font-size:15px;">Catatan Keuangan</b>
+              <span style="display:block; font-size:11px; color:var(--muted);">Hutang, wishlist, paylater & daftar belanja terintegrasi</span>
+            </div>
+            <button class="btn-primary" style="padding:7px 11px; font-size:11px;" data-action="open-note-cluster-modal">+ Kluster</button>
+          </div>
+
+          <div class="card hero" style="padding:14px;">
+            <span class="label-xs">Total Nominal Catatan Belum Selesai</span>
+            <div style="font-size:22px; font-weight:800; margin:4px 0 10px;">${rp(totalOpenNominal)}</div>
+            <div class="grid-3">
+              <div><span style="color:var(--muted)">Kluster</span><b>${state.noteClusters.length}</b></div>
+              <div><span style="color:var(--muted)">Belum Selesai</span><b style="color:var(--amber)">${openNotes.length} item</b></div>
+              <div style="text-align:right;"><span style="color:var(--muted)">Selesai</span><b style="color:var(--green)">${state.notes.length - openNotes.length} item</b></div>
+            </div>
+          </div>
+
+          <div class="seg-tabs">
+            ${[['ALL','Semua'],['OPEN','Belum Selesai'],['DONE','Selesai']].map(([k, lbl]) =>
+              `<button class="seg-btn ${notesStatusFilter === k ? 'active' : ''}" data-action="notes-status-filter" data-val="${k}">${lbl}</button>`
+            ).join('')}
+          </div>
+
+          ${state.noteClusters.length === 0 ? `
+            <div class="card" style="text-align:center; padding:26px 16px;">
+              <p style="font-size:13px; font-weight:700; margin-bottom:6px;">Belum Ada Kluster Catatan</p>
+              <p style="font-size:11px; color:var(--muted); line-height:1.45; margin-bottom:14px;">
+                Buat klustermu sendiri dengan nama bebas—bisa berdiri sendiri sebagai catatan biasa, atau <b>dihubungkan ke dompet</b> agar saat dicentang otomatis memotong/menambah saldo.
+              </p>
+              <button class="btn-primary" data-action="open-note-cluster-modal">+ Buat Kluster Pertama</button>
+            </div>
+          ` : state.noteClusters.map(cl => {
+            const allClusterNotes = state.notes.filter(n => n.clusterId === cl.id);
+            const openClusterNominal = allClusterNotes.filter(n => !n.isDone).reduce((s, n) => s + (n.amount || 0), 0);
+            const visibleNotes = allClusterNotes.filter(n => {
+              if (notesStatusFilter === 'OPEN') return !n.isDone;
+              if (notesStatusFilter === 'DONE') return n.isDone;
+              return true;
+            });
+
+            const linkedWallet = cl.linkedWalletId ? state.wallets.find(w => w.id === cl.linkedWalletId) : null;
+            const isIncLink = cl.linkedTxType === 'income';
+
+            return `
+              <div class="cluster-box">
+                <div class="cluster-head">
+                  <div style="min-width:0;">
+                    <div>
+                      <span class="cluster-title">${esc(cl.name)}</span>
+                      <span class="cluster-sub">${rp(openClusterNominal)}</span>
+                    </div>
+                    ${linkedWallet ? `
+                      <span class="wallet-link-badge ${isIncLink ? 'link-inc' : 'link-exp'}">
+                        🔗 ${esc(linkedWallet.name)} • ${isIncLink ? 'Otomatis Masuk' : 'Otomatis Keluar'}
+                      </span>
+                    ` : `
+                      <span class="wallet-link-badge link-none">📋 Catatan Mandiri (Non-Dompet)</span>
+                    `}
+                  </div>
+                  <div style="display:flex; align-items:center; gap:3px; flex-shrink:0;">
+                    <button class="btn-secondary" style="padding:4px 8px; font-size:10.5px;" data-action="open-add-note" data-cid="${cl.id}">+ Catatan</button>
+                    <button class="act-icon" title="Edit kluster & integrasi dompet" data-action="open-note-cluster-modal" data-cid="${cl.id}">✎</button>
+                    <button class="act-icon del" title="Hapus kluster" data-action="delete-note-cluster" data-cid="${cl.id}">🗑</button>
+                  </div>
+                </div>
+
+                ${visibleNotes.length === 0 ? `
+                  <div class="empty-hint">
+                    ${allClusterNotes.length === 0
+                      ? `Belum ada item di kluster <b>${esc(cl.name)}</b>. Klik <b>+ Catatan</b> untuk menambahkan.`
+                      : 'Tidak ada item pada filter status ini.'}
+                  </div>
+                ` : `
+                  <div style="display:flex; flex-direction:column; gap:7px;">
+                    ${visibleNotes.map(n => {
+                      const dueInfo = getDueBadgeInfo(n.dueDate, n.isDone);
+                      const hasLinkedTx = Boolean(n.linkedTxId && state.transactions.some(t => t.id === n.linkedTxId));
+                      return `
+                        <div class="note-item ${n.isDone ? 'done' : ''}">
+                          <button class="note-check ${n.isDone ? 'checked' : ''}" data-action="toggle-note-done" data-nid="${n.id}" title="${linkedWallet ? 'Centang untuk catat otomatis ke ' + esc(linkedWallet.name) : 'Tandai selesai/belum'}">
+                            ${n.isDone ? '✓' : ''}
+                          </button>
+                          <div style="flex:1; min-width:0;">
+                            <div class="note-title">${esc(n.title)}</div>
+                            ${n.memo ? `<div style="font-size:11px; color:var(--muted); margin-top:2px;">${esc(n.memo)}</div>` : ''}
+                            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:4px;">
+                              ${n.amount > 0 ? `<b style="font-size:11.5px; color:${n.isDone ? 'var(--muted)' : '#6ee7b7'};">${rp(n.amount)}</b>` : ''}
+                              ${dueInfo ? `<span class="note-due ${dueInfo.cls}">${dueInfo.label}</span>` : ''}
+                              ${hasLinkedTx ? `<span class="tx-synced-tag">✓ Tercatat di Dompet</span>` : ''}
+                            </div>
+                          </div>
+                          <div style="display:flex; align-items:center; gap:1px; flex-shrink:0;">
+                            ${!linkedWallet && n.amount > 0 && !n.isDone ? `<button class="act-icon" title="Bayar / catat ke dompet" data-action="realize-note" data-nid="${n.id}">💸</button>` : ''}
+                            <button class="act-icon" title="Edit catatan" data-action="edit-note" data-nid="${n.id}">✎</button>
+                            <button class="act-icon del" title="Hapus catatan" data-action="delete-note" data-nid="${n.id}">🗑</button>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `}
+              </div>
+            `;
+          }).join('')}
+        `;
+      }
+    }
+
+    // Modal Buat / Edit Kluster Catatan (Visual Mode Cards & Chip Selector — Tanpa Dropdown)
+    function openNoteClusterModal(editClusterId = null) {
+      const existing = editClusterId ? state.noteClusters.find(c => c.id === editClusterId) : null;
+      const box = document.getElementById('modal-generic-box');
+
+      let mode = (existing && existing.linkedWalletId) ? 'wallet' : 'standalone';
+      let selectedWalletId = existing ? (existing.linkedWalletId || (state.wallets[0]?.id || '')) : (state.wallets[0]?.id || '');
+      let selectedTxType = existing ? (existing.linkedTxType || 'expense') : 'expense';
+      let selectedCat = existing ? (existing.linkedCategory || '') : '';
+
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="font-size:14px;">${existing ? '✎ Pengaturan Kluster' : '+ Buat Kluster Catatan Baru'}</b>
+          <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+
+        <div>
+          <span class="label-xs">1. Nama Kluster</span>
+          <input id="nc-name-inp" type="text" value="${existing ? esc(existing.name) : ''}" placeholder="Contoh: Belanja Rakit PC, Hutang, Paylater..." style="margin-top:4px;" />
+          ${!existing ? `
+            <div class="suggest-chips">
+              ${['Daftar Belanja', 'Hutang & Piutang', 'Wishlist Barang', 'Cicilan Paylater'].map(s =>
+                `<button type="button" class="suggest-chip" data-action="fill-nc-name" data-val="${s}">+ ${s}</button>`
+              ).join('')}
+            </div>
+          ` : ''}
+        </div>
+
+        <div>
+          <span class="label-xs">2. Mode Hubungan Dompet</span>
+          <div class="mode-cards">
+            <button type="button" id="mode-btn-standalone" class="mode-card">
+              <span class="mode-card-title">📋 Catatan Mandiri</span>
+              <span class="mode-card-desc">Hanya daftar catatan biasa, tidak mengubah saldo dompet.</span>
+            </button>
+            <button type="button" id="mode-btn-wallet" class="mode-card">
+              <span class="mode-card-title">🔗 Integrasi Dompet</span>
+              <span class="mode-card-desc">Centang item otomatis potong / tambah saldo dompet.</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="nc-integration-panel" style="display:none; background:var(--bg); border:1px solid rgba(56,189,248,0.3); border-radius:14px; padding:11px; flex-direction:column; gap:11px;"></div>
+
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+          <button type="button" id="save-nc-btn" class="btn-primary" style="flex:1;">${existing ? 'Simpan Perubahan' : 'Buat Kluster'}</button>
+        </div>
+      `;
+
+      const btnStand = document.getElementById('mode-btn-standalone');
+      const btnWallet = document.getElementById('mode-btn-wallet');
+      const panel = document.getElementById('nc-integration-panel');
+
+      function renderIntegrationPanel() {
+        btnStand.className = 'mode-card' + (mode === 'standalone' ? ' active-stand' : '');
+        btnWallet.className = 'mode-card' + (mode === 'wallet' ? ' active-link' : '');
+
+        if (mode === 'standalone') {
+          panel.style.display = 'none';
+          return;
+        }
+
+        panel.style.display = 'flex';
+        if (state.wallets.length > 0 && !state.wallets.some(w => w.id === selectedWalletId)) {
+          selectedWalletId = state.wallets[0].id;
+        }
+
+        const catList = selectedTxType === 'income' ? INCOME_CATS : EXPENSE_CATS;
+        if (selectedCat && !catList.includes(selectedCat)) selectedCat = '';
+
+        panel.innerHTML = `
+          <div>
+            <span class="label-xs" style="color:#7dd3fc;">A. Pilih Dompet Target</span>
+            ${state.wallets.length === 0 ? `
+              <div style="margin-top:6px; background:var(--surface); border:1px dashed #475569; border-radius:11px; padding:10px;">
+                <p style="font-size:11px; color:var(--muted); margin-bottom:8px; line-height:1.4;">
+                  Kamu belum punya dompet di Beranda. Buat dompet cepat di sini agar kluster bisa langsung dihubungkan:
+                </p>
+                <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:6px; margin-bottom:6px;">
+                  <input id="quick-w-name" type="text" placeholder="Nama (mis. GoPay / BCA)" style="padding:7px 9px; font-size:11px;" />
+                  <input id="quick-w-bal" type="number" placeholder="Saldo awal (Rp)" style="padding:7px 9px; font-size:11px;" />
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <select id="quick-w-cat" style="padding:6px 8px; font-size:11px; flex:1;">
+                    <option value="ewallet">E-Wallet</option>
+                    <option value="bank">Bank</option>
+                    <option value="cash">Fisik / Cash</option>
+                  </select>
+                  <button type="button" id="quick-w-create-btn" class="btn-primary" style="padding:6px 10px; font-size:11px;">+ Buat & Pilih</button>
+                </div>
+              </div>
+            ` : `
+              <div class="wallet-pick-grid">
+                ${state.wallets.map(w => `
+                  <button type="button" class="wallet-pick-btn ${selectedWalletId === w.id ? 'selected' : ''}" data-pick-wid="${w.id}">
+                    <span class="wallet-pick-name">${selectedWalletId === w.id ? '✓ ' : ''}${esc(w.name)}</span>
+                    <span class="wallet-pick-bal">${rp(w.balance)}</span>
+                  </button>
+                `).join('')}
+              </div>
+            `}
+          </div>
+
+          <div>
+            <span class="label-xs" style="color:#7dd3fc;">B. Efek Saat Item Dicentang</span>
+            <div class="flow-toggle-grid">
+              <button type="button" id="flow-exp-btn" class="flow-toggle-btn ${selectedTxType === 'expense' ? 'active-exp' : ''}">
+                📤 Pengeluaran (- Saldo)
+              </button>
+              <button type="button" id="flow-inc-btn" class="flow-toggle-btn ${selectedTxType === 'income' ? 'active-inc' : ''}">
+                📥 Pemasukan (+ Saldo)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <span class="label-xs" style="color:#7dd3fc;">C. Kategori Transaksi</span>
+            <div class="mini-chip-wrap">
+              <button type="button" class="mini-chip ${selectedCat === '' ? 'selected' : ''}" data-pick-nc-cat="">✨ Otomatis</button>
+              ${catList.map(c => `
+                <button type="button" class="mini-chip ${selectedCat === c ? 'selected' : ''}" data-pick-nc-cat="${c}">${c}</button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        // Bind events inside panel
+        const qwBtn = document.getElementById('quick-w-create-btn');
+        if (qwBtn) {
+          qwBtn.onclick = () => {
+            const wName = document.getElementById('quick-w-name').value.trim();
+            const wBal = parseInt(document.getElementById('quick-w-bal').value, 10) || 0;
+            const wCat = document.getElementById('quick-w-cat').value;
+            if (!wName) return showToast('Isi nama dompet terlebih dahulu');
+            const newId = 'w_' + Date.now();
+            state.wallets.push({ id: newId, name: wName, category: wCat, balance: wBal });
+            PERIOD_KEYS.forEach(pk => {
+              if (!state.budgetsByPeriod[pk].includedWalletIds.includes(newId)) {
+                state.budgetsByPeriod[pk].includedWalletIds.push(newId);
+              }
+            });
+            selectedWalletId = newId;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            renderIntegrationPanel();
+            showToast(`Dompet "${wName}" dibuat & terhubung`);
+          };
+        }
+
+        panel.querySelectorAll('[data-pick-wid]').forEach(btn => {
+          btn.onclick = () => {
+            selectedWalletId = btn.dataset.pickWid;
+            renderIntegrationPanel();
+          };
+        });
+
+        const expBtn = document.getElementById('flow-exp-btn');
+        const incBtn = document.getElementById('flow-inc-btn');
+        if (expBtn) expBtn.onclick = () => { selectedTxType = 'expense'; renderIntegrationPanel(); };
+        if (incBtn) incBtn.onclick = () => { selectedTxType = 'income'; renderIntegrationPanel(); };
+
+        panel.querySelectorAll('[data-pick-nc-cat]').forEach(btn => {
+          btn.onclick = () => {
+            selectedCat = btn.dataset.pickNcCat;
+            renderIntegrationPanel();
+          };
+        });
+      }
+
+      btnStand.onclick = () => { mode = 'standalone'; renderIntegrationPanel(); };
+      btnWallet.onclick = () => { mode = 'wallet'; renderIntegrationPanel(); };
+
+      renderIntegrationPanel();
+      document.getElementById('modal-generic').classList.add('open');
+      if (!existing) setTimeout(() => document.getElementById('nc-name-inp')?.focus(), 50);
+
+      document.getElementById('save-nc-btn').onclick = () => {
+        const name = document.getElementById('nc-name-inp').value.trim();
+        if (!name) return showToast('Nama kluster tidak boleh kosong');
+
+        if (mode === 'wallet' && !selectedWalletId) {
+          return showToast('Pilih atau buat dompet terlebih dahulu untuk mode Integrasi Dompet');
+        }
+
+        const finalWalletId = mode === 'wallet' ? selectedWalletId : '';
+        const finalTxType = mode === 'wallet' ? selectedTxType : 'expense';
+        const finalCat = mode === 'wallet' ? selectedCat : '';
+
+        if (existing) {
+          existing.name = name;
+          existing.linkedWalletId = finalWalletId;
+          existing.linkedTxType = finalTxType;
+          existing.linkedCategory = finalCat;
+          showToast('Pengaturan kluster diperbarui');
+        } else {
+          state.noteClusters.push({
+            id: 'nc_' + Date.now(),
+            name,
+            linkedWalletId: finalWalletId,
+            linkedTxType: finalTxType,
+            linkedCategory: finalCat
+          });
+          showToast(finalWalletId ? `Kluster "${name}" terhubung ke dompet` : `Kluster "${name}" dibuat`);
+        }
+        document.getElementById('modal-generic').classList.remove('open');
+        saveState();
+      };
+    }
+
+    function openNoteFormModal(clusterId, editNoteId = null) {
+      const cluster = state.noteClusters.find(c => c.id === clusterId);
+      if (!cluster) return;
+      const existing = editNoteId ? state.notes.find(n => n.id === editNoteId) : null;
+      const linkedWallet = cluster.linkedWalletId ? state.wallets.find(w => w.id === cluster.linkedWalletId) : null;
+      const box = document.getElementById('modal-generic-box');
+
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="font-size:14px;">${existing ? '✎ Edit Catatan' : '+ Tambah Catatan'} • ${esc(cluster.name)}</b>
+          <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+        ${linkedWallet ? `
+          <div style="background:var(--blue-soft); border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:8px 10px; font-size:11px; color:#bae6fd;">
+            🔗 Terintegrasi dengan <b>${esc(linkedWallet.name)}</b>. Saat item ini dicentang selesai, nominalnya otomatis dicatat sebagai <b>${cluster.linkedTxType === 'income' ? 'Pemasukan' : 'Pengeluaran'}</b>.
+          </div>
+        ` : ''}
+        <div style="display:flex; flex-direction:column; gap:9px;">
+          <div>
+            <span class="label-xs">Judul / Nama Item</span>
+            <input id="nt-title" type="text" value="${existing ? esc(existing.title) : ''}" placeholder="Contoh: Mouse Wireless, Paylater ke-2..." style="margin-top:4px;" />
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div>
+              <span class="label-xs">Nominal (Rp${linkedWallet ? '' : ', Opsional'})</span>
+              <input id="nt-amount" type="number" min="0" value="${existing ? existing.amount : ''}" placeholder="0" style="margin-top:4px; font-weight:700;" />
+            </div>
+            <div>
+              <span class="label-xs">Target / Jatuh Tempo</span>
+              <input id="nt-due" type="date" value="${existing ? (existing.dueDate || '') : ''}" style="margin-top:4px;" />
+            </div>
+          </div>
+          <div>
+            <span class="label-xs">Keterangan Tambahan (Opsional)</span>
+            <input id="nt-memo" type="text" value="${existing ? esc(existing.memo || '') : ''}" placeholder="Catatan detail, spesifikasi, dll..." style="margin-top:4px;" />
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+          <button id="save-nt-btn" class="btn-primary" style="flex:1;">Simpan Catatan</button>
+        </div>
+      `;
+      document.getElementById('modal-generic').classList.add('open');
+      setTimeout(() => document.getElementById('nt-title')?.focus(), 50);
+
+      document.getElementById('save-nt-btn').onclick = () => {
+        const title = document.getElementById('nt-title').value.trim();
+        const amount = parseInt(document.getElementById('nt-amount').value, 10) || 0;
+        const dueDate = document.getElementById('nt-due').value || '';
+        const memo = document.getElementById('nt-memo').value.trim();
+        if (!title) return showToast('Judul catatan wajib diisi');
+
+        if (existing) {
+          existing.title = title;
+          existing.amount = amount;
+          existing.dueDate = dueDate;
+          existing.memo = memo;
+        } else {
+          state.notes.unshift({
+            id: 'nt_' + Date.now(),
+            clusterId: cluster.id,
+            title,
+            amount,
+            dueDate,
+            memo,
+            isDone: false,
+            linkedTxId: null,
+            createdAt: new Date().toISOString()
+          });
+        }
+        document.getElementById('modal-generic').classList.remove('open');
+        saveState();
+        showToast(existing ? 'Catatan diperbarui' : 'Catatan ditambahkan');
+      };
+    }
+
+    function openRealizeNoteModal(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      if (state.wallets.length === 0) {
+        return showToast('Tambahkan dompet dulu di Beranda untuk mencatat transaksi');
+      }
+      const cluster = state.noteClusters.find(c => c.id === note.clusterId);
+      const box = document.getElementById('modal-generic-box');
+
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="font-size:14px;">💸 Realisasikan ke Transaksi</b>
+          <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+        <p style="font-size:11px; color:var(--muted);">
+          Catat <b>${esc(note.title)}</b> (${rp(note.amount)}) ke arus kas dompet dan tandai catatan ini selesai.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:9px;">
+          <div>
+            <span class="label-xs">Jenis Arus Kas</span>
+            <select id="rz-type" style="margin-top:4px;">
+              <option value="expense">Pengeluaran (Bayar Hutang / Paylater / Beli Barang)</option>
+              <option value="income">Pemasukan (Piutang Dibayar Orang Lain)</option>
+            </select>
+          </div>
+          <div>
+            <span class="label-xs">Pilih Dompet</span>
+            <select id="rz-wallet" style="margin-top:4px;">
+              ${state.wallets.map(w => `<option value="${w.id}">${esc(w.name)} (${rp(w.balance)})</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <span class="label-xs">Kategori Transaksi</span>
+            <select id="rz-cat" style="margin-top:4px;">
+              ${EXPENSE_CATS.map(c => `<option value="${c}" ${c === autoCategory(note.title) ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+          <button id="exec-rz-btn" class="btn-primary" style="flex:1;">Catat & Selesaikan</button>
+        </div>
+      `;
+      document.getElementById('modal-generic').classList.add('open');
+
+      document.getElementById('rz-type').onchange = (e) => {
+        const isInc = e.target.value === 'income';
+        const list = isInc ? INCOME_CATS : EXPENSE_CATS;
+        document.getElementById('rz-cat').innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
+      };
+
+      document.getElementById('exec-rz-btn').onclick = () => {
+        const txType = document.getElementById('rz-type').value;
+        const wId = document.getElementById('rz-wallet').value;
+        const cat = document.getElementById('rz-cat').value;
+        const prefixCluster = cluster ? `[${cluster.name}] ` : '';
+        const finalTitle = cat === 'Lainnya' ? `Lainnya: ${prefixCluster}${note.title}` : `${prefixCluster}${note.title}`;
+
+        const tx = {
+          id: 'tx_' + Date.now(),
+          walletId: wId,
+          type: txType,
+          amount: note.amount,
+          title: finalTitle,
+          category: cat,
+          isAuto: false,
+          createdAt: new Date().toISOString()
+        };
+        applyWalletEffect(tx);
+        state.transactions.unshift(tx);
+        note.isDone = true;
+        note.linkedTxId = tx.id;
+
+        document.getElementById('modal-generic').classList.remove('open');
+        saveState();
+        showToast('Tercatat ke transaksi & catatan ditandai selesai');
+      };
+    }
+
+    function openSystemSettingsModal() {
+      const box = document.getElementById('modal-generic-box');
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="font-size:15px;">⚙️ Pengaturan Sistem</b>
+          <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+
+        <div style="background:var(--bg); border:1px solid var(--surface-2); border-radius:14px; padding:12px;">
+          <b style="font-size:12px; color:#6ee7b7;">📱 Simulator Notifikasi HP (Uji Logika)</b>
+          <p style="font-size:11px; color:var(--muted); margin-top:3px;">Uji pencatatan otomatis & anti-double counting:</p>
+          <div class="sim-grid">
+            <button class="sim-btn" data-action="sim-notif" data-sim="qris">💳 <b>QRIS GoPay</b><br>Bayar Warung -Rp18.000</button>
+            <button class="sim-btn" data-action="sim-notif" data-sim="topup">⇄ <b>Top Up GoPay</b><br>Dari BCA Rp100.000</button>
+            <button class="sim-btn" data-action="sim-notif" data-sim="shopee">🛍️ <b>Notif Shopee</b><br>Perkaya judul Rp18.000</button>
+            <button class="sim-btn" data-action="sim-notif" data-sim="unparsed">⚠️ <b>Format Asing</b><br>Masuk kotak gagal baca</button>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <span class="label-xs">Manajemen Data & Preferensi</span>
+          <button class="sim-btn" style="text-align:center; font-weight:700;" data-action="toggle-hide">
+            ${state.settings.hideBalance ? '👁️ Tampilkan Nominal Saldo' : '🙈 Sembunyikan Nominal Saldo'}
+          </button>
+          <button class="sim-btn" style="text-align:center; font-weight:700;" data-action="open-budget-settings">
+            🎯 Atur Pembagian Budget per Periode
+          </button>
+          <button class="sim-btn" style="text-align:center; font-weight:700; color:#6ee7b7;" data-action="export-json">
+            ⬇️ Export Cadangan Data (.JSON)
+          </button>
+          <button class="sim-btn" style="text-align:center; color:var(--red);" data-action="reset-empty">
+            ↺ Kosongkan Semua Data (Reset ke 0)
+          </button>
+        </div>
+      `;
+      document.getElementById('modal-generic').classList.add('open');
+    }
+
+    function renderAddModalBody() {
+      if (state.wallets.length === 0) {
+        document.getElementById('modal-add-body').innerHTML = `
+          <div style="text-align:center; padding:20px 10px;">
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Belum ada dompet yang terdaftar. Tambahkan dompet terlebih dahulu di Beranda (klik <b>Mode Edit</b> pada kluster Bank, E-Wallet, atau Fisik).</p>
+            <button class="btn-primary" data-action="close-modals">Mengerti</button>
+          </div>
+        `;
+        return;
+      }
+
+      const cats = modalTxType === 'income' ? INCOME_CATS : EXPENSE_CATS;
+      if (!cats.includes(selectedCategory)) selectedCategory = cats[0];
+      const isOther = selectedCategory === 'Lainnya';
+      const body = document.getElementById('modal-add-body');
+
+      body.innerHTML = `
+        <form id="full-tx-form" style="display:flex; flex-direction:column; gap:12px;">
+          ${modalTxType === 'transfer' ? `
+            <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; background:var(--bg); padding:10px; border-radius:14px;">
+              <div><span class="label-xs">Dari</span><select id="tx-from">${state.wallets.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></div>
+              <span style="color:var(--blue); font-weight:800; margin-top:12px;">→</span>
+              <div><span class="label-xs">Ke</span><select id="tx-to">${state.wallets.map((w,i) => `<option value="${w.id}" ${i===1?'selected':''}>${esc(w.name)}</option>`).join('')}</select></div>
+            </div>
+          ` : `
+            <div>
+              <span class="label-xs">Pilih Kategori</span>
+              <div class="cat-grid" style="margin-top:6px;">
+                ${cats.map(c => `<div class="cat-chip ${selectedCategory === c ? 'selected' : ''}" data-action="pick-cat" data-cat="${c}">${c}</div>`).join('')}
+              </div>
+            </div>
+
+            ${isOther ? `
+              <div class="other-box">
+                <label for="tx-other-detail">⚠️ Keterangan "Lainnya" (Wajib Diisi)</label>
+                <input id="tx-other-detail" type="text" required placeholder="Jelaskan transaksi ini untuk apa..." />
+              </div>
+            ` : ''}
+
+            <div>
+              <span class="label-xs">Dompet Sumber</span>
+              <select id="tx-wallet" style="margin-top:6px;">${state.wallets.map(w => `<option value="${w.id}">${esc(w.name)} (${w.category.toUpperCase()})</option>`).join('')}</select>
+            </div>
+          `}
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div><span class="label-xs">Nominal (Rp)</span><input id="tx-amount" type="number" min="1" required placeholder="15000" style="margin-top:4px; font-weight:700;" /></div>
+            <div><span class="label-xs">${isOther && modalTxType !== 'transfer' ? 'Catatan Tambahan' : 'Catatan'}</span><input id="tx-note" type="text" placeholder="Opsional..." style="margin-top:4px;" /></div>
+          </div>
+          <button type="submit" class="btn-primary" style="width:100%; padding:12px;">Simpan Transaksi</button>
+        </form>
+      `;
+
+      document.getElementById('full-tx-form').onsubmit = (e) => {
+        e.preventDefault();
+        const amount = parseInt(document.getElementById('tx-amount').value, 10);
+        const note = document.getElementById('tx-note').value.trim();
+        if (!amount || amount <= 0) return;
+
+        if (modalTxType === 'transfer') {
+          if (state.wallets.length < 2) return showToast('Minimal butuh 2 dompet untuk melakukan transfer');
+          const fromId = document.getElementById('tx-from').value;
+          const toId = document.getElementById('tx-to').value;
+          if (fromId === toId) return showToast('Dompet asal dan tujuan harus berbeda');
+          const fW = state.wallets.find(w => w.id === fromId);
+          const tW = state.wallets.find(w => w.id === toId);
+          const tx = { id: 'tx_' + Date.now(), walletId: fromId, targetWalletId: toId, type: 'transfer', amount, title: note || `Transfer: ${fW.name} → ${tW.name}`, category: 'Transfer', isAuto: false, createdAt: new Date().toISOString() };
+          applyWalletEffect(tx);
+          state.transactions.unshift(tx);
+        } else {
+          let finalTitle = note || selectedCategory;
+          if (selectedCategory === 'Lainnya') {
+            const otherDetail = document.getElementById('tx-other-detail')?.value.trim();
+            if (!otherDetail) return showToast('Wajib isi keterangan untuk kategori Lainnya!');
+            finalTitle = note ? `Lainnya: ${otherDetail} (${note})` : `Lainnya: ${otherDetail}`;
+          }
+          const wId = document.getElementById('tx-wallet').value;
+          const tx = { id: 'tx_' + Date.now(), walletId: wId, type: modalTxType, amount, title: finalTitle, category: selectedCategory, isAuto: false, createdAt: new Date().toISOString() };
+          applyWalletEffect(tx);
+          state.transactions.unshift(tx);
+        }
+        document.getElementById('modal-add').classList.remove('open');
+        saveState();
+        showToast('Transaksi berhasil disimpan');
+      };
+    }
+
+    function openEditTxModal(txId) {
+      const tx = state.transactions.find(t => t.id === txId);
+      if (!tx || tx.type === 'sync') return;
+      const box = document.getElementById('modal-generic-box');
+      const cats = tx.type === 'income' ? INCOME_CATS : tx.type === 'transfer' ? ['Transfer'] : EXPENSE_CATS;
+
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="font-size:14px;">✎ Edit Transaksi Aman</b>
+          <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+        <p style="font-size:11px; color:var(--muted);">Perubahan nominal atau dompet akan menghitung ulang saldo secara otomatis dan memberi tanda <b>[DIEDIT]</b>.</p>
+
+        <div>
+          <span class="label-xs">Judul / Keterangan</span>
+          <input id="etx-title" type="text" value="${esc(tx.title)}" style="margin-top:4px; margin-bottom:8px;" />
+
+          <span class="label-xs">Nominal (Rp)</span>
+          <input id="etx-amount" type="number" min="1" value="${tx.amount}" style="margin-top:4px; margin-bottom:8px; font-weight:700;" />
+
+          ${tx.type !== 'transfer' ? `
+            <span class="label-xs">Kategori</span>
+            <select id="etx-cat" style="margin-top:4px; margin-bottom:8px;">
+              ${cats.map(c => `<option value="${c}" ${tx.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+
+            <span class="label-xs">Dompet</span>
+            <select id="etx-wallet" style="margin-top:4px;">
+              ${state.wallets.map(w => `<option value="${w.id}" ${tx.walletId === w.id ? 'selected' : ''}>${esc(w.name)}</option>`).join('')}
+            </select>
+          ` : ''}
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+          <button id="save-etx-btn" class="btn-primary" style="flex:1;">Simpan Perubahan</button>
+        </div>
+      `;
+      document.getElementById('modal-generic').classList.add('open');
+
+      document.getElementById('save-etx-btn').onclick = () => {
+        const nextTitle = document.getElementById('etx-title').value.trim();
+        const nextAmount = parseInt(document.getElementById('etx-amount').value, 10);
+        if (!nextTitle || !nextAmount || nextAmount <= 0) return showToast('Judul dan nominal harus valid');
+
+        const nextCat = tx.type !== 'transfer' ? document.getElementById('etx-cat').value : 'Transfer';
+        if (nextCat === 'Lainnya' && !nextTitle.toLowerCase().includes('lainnya:')) {
+          return showToast('Sertakan keterangan jelas untuk kategori Lainnya');
+        }
+
+        applyWalletEffect(tx, true);
+        tx.title = nextTitle;
+        tx.amount = nextAmount;
+        tx.category = nextCat;
+        if (tx.type !== 'transfer') {
+          tx.walletId = document.getElementById('etx-wallet').value;
+        }
+        tx.isEdited = true;
+        applyWalletEffect(tx, false);
+
+        document.getElementById('modal-generic').classList.remove('open');
+        saveState();
+        showToast('Transaksi diperbarui & saldo disinkronkan');
+      };
+    }
+
+    function openBudgetSettingsModal() {
+      const box = document.getElementById('modal-generic-box');
+      const pKey = state.activeBudgetPeriod;
+      const cfg = state.budgetsByPeriod[pKey];
+      const linkedBalance = state.wallets
+        .filter(w => cfg.includedWalletIds.includes(w.id))
+        .reduce((s, w) => s + w.balance, 0);
+
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="font-size:14px;">⚙️ Pembagian Budget • ${getPeriodLabel(pKey, cfg)}</b>
+          <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+
+        <div style="background:var(--bg); padding:10px 12px; border-radius:12px; font-size:11px; display:flex; justify-content:space-between;">
+          <span style="color:var(--muted);">Saldo Dompet Terhubung:</span>
+          <b style="color:var(--green);">${rp(linkedBalance)}</b>
+        </div>
+
+        ${pKey === 'custom' ? `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div><span class="label-xs">Dari Tanggal</span><input id="cfg-start" type="date" value="${cfg.customStart}" style="margin-top:4px;" /></div>
+            <div><span class="label-xs">Sampai Tanggal</span><input id="cfg-end" type="date" value="${cfg.customEnd}" style="margin-top:4px;" /></div>
+          </div>
+        ` : ''}
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <span class="label-xs">Pos Kebutuhan & Tujuan Pemakaian (Isi 0 jika tidak dipakai)</span>
+          ${EXPENSE_CATS.map(cat => {
+            const existing = cfg.allocations[cat] || { limit: 0, note: '' };
+            return `
+              <div style="background:var(--bg); border:1px solid var(--surface-2); border-radius:12px; padding:9px 10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+                  <b style="font-size:12px; color:#e2e8f0;">${cat}</b>
+                  <input class="cfg-alloc-limit" data-cat="${cat}" type="number" min="0" value="${existing.limit || 0}" placeholder="Nominal Rp" style="width:130px; padding:6px 8px; font-weight:700;" />
+                </div>
+                <input class="cfg-alloc-note" data-cat="${cat}" type="text" value="${esc(existing.note || '')}" placeholder="Dipakai untuk apa pada periode ini? (opsional)" style="padding:6px 8px; font-size:11px;" />
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+          <button id="save-budget-cfg" class="btn-primary" style="flex:1;">Simpan Pembagian</button>
+        </div>
+      `;
+
+      document.getElementById('save-budget-cfg').onclick = () => {
+        if (pKey === 'custom') {
+          cfg.customStart = document.getElementById('cfg-start').value || firstDayMonth;
+          cfg.customEnd = document.getElementById('cfg-end').value || todayStr;
+        }
+        const nextAlloc = {};
+        const limitInputs = document.querySelectorAll('.cfg-alloc-limit');
+        const noteInputs = document.querySelectorAll('.cfg-alloc-note');
+
+        limitInputs.forEach((inp, idx) => {
+          const cat = inp.dataset.cat;
+          const lim = parseInt(inp.value, 10) || 0;
+          const note = noteInputs[idx]?.value.trim() || '';
+          if (lim > 0) {
+            nextAlloc[cat] = { limit: lim, note };
+          }
+        });
+
+        cfg.allocations = nextAlloc;
+        document.getElementById('modal-generic').classList.remove('open');
+        saveState();
+        showToast('Pembagian budget periode disimpan');
+      };
+
+      document.getElementById('modal-generic').classList.add('open');
+    }
+
+    // Delegasi Klik Global
+    document.body.addEventListener('click', (e) => {
+      const tabBtn = e.target.closest('[data-tab]');
+      if (tabBtn) { activeTab = tabBtn.dataset.tab; renderAll(); return; }
+
+      const txTab = e.target.closest('[data-tx-tab]');
+      if (txTab) {
+        modalTxType = txTab.dataset.txTab;
+        document.querySelectorAll('[data-tx-tab]').forEach(b => b.classList.toggle('active', b.dataset.txTab === modalTxType));
+        renderAddModalBody();
+        return;
+      }
+
+      const actEl = e.target.closest('[data-action]');
+      if (!actEl) return;
+      const action = actEl.dataset.action;
+
+      if (action === 'report-sub-tab') {
+        reportSubTab = actEl.dataset.val;
+        renderAll();
+      } else if (action === 'toggle-auto') {
+        state.settings.autoTrackingEnabled = !state.settings.autoTrackingEnabled;
+        if (state.settings.autoTrackingEnabled) state.settings.autoEnabledAt = new Date().toISOString();
+        saveState();
+      } else if (action === 'toggle-hide') {
+        state.settings.hideBalance = !state.settings.hideBalance;
+        saveState();
+        if (document.getElementById('modal-generic').classList.contains('open')) openSystemSettingsModal();
+      } else if (action === 'open-settings') {
+        openSystemSettingsModal();
+      } else if (action === 'toggle-cluster-edit') {
+        const c = actEl.dataset.cluster;
+        clusterEditMode[c] = !clusterEditMode[c];
+        renderAll();
+      } else if (action === 'click-wallet') {
+        const cluster = actEl.dataset.cluster;
+        if (!clusterEditMode[cluster]) {
+          showToast('Terkunci — Klik "Mode Edit" di kluster ini untuk mengedit');
+          return;
+        }
+        const w = state.wallets.find(x => x.id === actEl.dataset.id);
+        if (!w) return;
+        const box = document.getElementById('modal-generic-box');
+        box.innerHTML = `
+          <b style="font-size:14px;">Penyesuaian Saldo ${esc(w.name)}</b>
+          <p style="font-size:11px; color:var(--muted);">Saldo saat ini: <b>${rp(w.balance)}</b>. Selisih akan dicatat sebagai <b>SYNC</b> di tab Laporan sehingga tidak mengubah angka pemasukan, pengeluaran, maupun budget.</p>
+          <div>
+            <span class="label-xs">Nama Dompet</span>
+            <input id="edit-name-inp" type="text" value="${esc(w.name)}" style="margin-top:4px; margin-bottom:8px;" />
+            <span class="label-xs">Saldo Aktual Saat Ini (Rp)</span>
+            <input id="edit-bal-inp" type="number" value="${w.balance}" style="margin-top:4px; font-size:16px; font-weight:700;" />
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+            <button id="save-bal-btn" class="btn-primary" style="flex:1;">Sinkronkan</button>
+          </div>
+        `;
+        document.getElementById('modal-generic').classList.add('open');
+        document.getElementById('save-bal-btn').onclick = () => {
+          const nextName = document.getElementById('edit-name-inp').value.trim();
+          const nextBal = parseInt(document.getElementById('edit-bal-inp').value, 10);
+          if (nextName) w.name = nextName;
+          if (!isNaN(nextBal)) {
+            const diff = nextBal - w.balance;
+            if (diff !== 0) {
+              state.transactions.unshift({
+                id: 'tx_sync_' + Date.now(),
+                walletId: w.id,
+                type: 'sync',
+                syncDiff: diff,
+                amount: Math.abs(diff),
+                title: `Penyesuaian Saldo (${w.name})`,
+                category: 'Sinkronisasi',
+                isAuto: false,
+                createdAt: new Date().toISOString()
+              });
+              w.balance = nextBal;
+            }
+          }
+          document.getElementById('modal-generic').classList.remove('open');
+          saveState();
+          showToast('Saldo disinkronkan tanpa mengubah arus kas');
+        };
+      } else if (action === 'add-cluster-wallet') {
+        const cluster = actEl.dataset.cluster;
+        const label = cluster === 'bank' ? 'Bank' : cluster === 'ewallet' ? 'E-Wallet' : 'Dompet Fisik';
+        const box = document.getElementById('modal-generic-box');
+        box.innerHTML = `
+          <b style="font-size:14px;">+ Tambah Akun ${label}</b>
+          <div>
+            <span class="label-xs">Nama ${label}</span>
+            <input id="new-w-name" type="text" placeholder="${cluster === 'bank' ? 'Contoh: BCA / SeaBank' : cluster === 'ewallet' ? 'Contoh: GoPay / DANA' : 'Contoh: Dompet Utama'}" style="margin-top:4px; margin-bottom:8px;" />
+            <span class="label-xs">Saldo Awal (Rp)</span>
+            <input id="new-w-bal" type="number" value="0" style="margin-top:4px; font-weight:700;" />
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+            <button id="save-new-w" class="btn-primary" style="flex:1;">Tambahkan</button>
+          </div>
+        `;
+        document.getElementById('modal-generic').classList.add('open');
+        document.getElementById('save-new-w').onclick = () => {
+          const name = document.getElementById('new-w-name').value.trim();
+          const bal = parseInt(document.getElementById('new-w-bal').value, 10) || 0;
+          if (!name) return;
+          const newId = 'w_' + Date.now();
+          state.wallets.push({ id: newId, name, category: cluster, balance: bal });
+          PERIOD_KEYS.forEach(pk => {
+            if (!state.budgetsByPeriod[pk].includedWalletIds.includes(newId)) {
+              state.budgetsByPeriod[pk].includedWalletIds.push(newId);
+            }
+          });
+          document.getElementById('modal-generic').classList.remove('open');
+          saveState();
+        };
+      } else if (action === 'fill-cash-amt') {
+        const amtInp = document.getElementById('cash-amt-inp');
+        const descInp = document.getElementById('cash-desc-inp');
+        if (amtInp) amtInp.value = actEl.dataset.amt;
+        if (descInp && !descInp.value.trim()) descInp.focus();
+      } else if (action === 'history-type-filter') {
+        historyTypeFilter = actEl.dataset.val; renderAll();
+      } else if (action === 'switch-budget-period') {
+        state.activeBudgetPeriod = actEl.dataset.period;
+        saveState();
+      } else if (action === 'toggle-budget-wallet') {
+        const wid = actEl.dataset.wid;
+        const pCfg = state.budgetsByPeriod[state.activeBudgetPeriod];
+        if (pCfg.includedWalletIds.includes(wid)) {
+          pCfg.includedWalletIds = pCfg.includedWalletIds.filter(id => id !== wid);
+        } else {
+          pCfg.includedWalletIds.push(wid);
+        }
+        saveState();
+      } else if (action === 'open-budget-settings') {
+        openBudgetSettingsModal();
+      } else if (action === 'open-add') {
+        document.getElementById('modal-add').classList.add('open');
+        renderAddModalBody();
+      } else if (action === 'edit-tx') {
+        openEditTxModal(actEl.dataset.id);
+      } else if (action === 'confirm-delete-tx') {
+        const tx = state.transactions.find(t => t.id === actEl.dataset.id);
+        if (!tx) return;
+        const box = document.getElementById('modal-generic-box');
+        box.innerHTML = `
+          <b style="font-size:14px; color:var(--red);">Hapus Riwayat Ini?</b>
+          <p style="font-size:12px; color:#cbd5e1;"><b>${esc(tx.title)}</b> (${rp(tx.amount)})</p>
+          <p style="font-size:11px; color:var(--muted);">Saldo dompet terkait akan otomatis dikembalikan ke kondisi sebelum catatan ini dibuat.</p>
+          <div style="display:flex; gap:8px;">
+            <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+            <button id="exec-del-tx" class="btn-danger" style="flex:1;">Ya, Hapus</button>
+          </div>
+        `;
+        document.getElementById('modal-generic').classList.add('open');
+        document.getElementById('exec-del-tx').onclick = () => {
+          const idx = state.transactions.findIndex(t => t.id === tx.id);
+          if (idx > -1) {
+            applyWalletEffect(state.transactions[idx], true);
+            state.transactions.splice(idx, 1);
+          }
+          document.getElementById('modal-generic').classList.remove('open');
+          saveState();
+          showToast('Catatan dihapus & saldo dipulihkan');
+        };
+      } else if (action === 'close-modals') {
+        document.getElementById('modal-add').classList.remove('open');
+        document.getElementById('modal-generic').classList.remove('open');
+      } else if (action === 'pick-cat') {
+        selectedCategory = actEl.dataset.cat;
+        renderAddModalBody();
+      } else if (action === 'chart-type') {
+        chartType = actEl.dataset.val;
+        drilldownCat = null;
+        renderAll();
+      } else if (action === 'period-filter') {
+        periodFilter = actEl.dataset.val;
+        drilldownCat = null;
+        renderAll();
+      } else if (action === 'chart-view') {
+        chartViewMode = actEl.dataset.val;
+        drilldownCat = null;
+        renderAll();
+      } else if (action === 'drill-cat') {
+        const c = actEl.dataset.cat;
+        drilldownCat = drilldownCat === c ? null : c;
+        renderAll();
+      } else if (action === 'notes-status-filter') {
+        notesStatusFilter = actEl.dataset.val;
+        renderAll();
+      } else if (action === 'open-note-cluster-modal') {
+        openNoteClusterModal(actEl.dataset.cid || null);
+      } else if (action === 'fill-nc-name') {
+        const inp = document.getElementById('nc-name-inp');
+        if (inp) { inp.value = actEl.dataset.val; inp.focus(); }
+      } else if (action === 'delete-note-cluster') {
+        const cl = state.noteClusters.find(c => c.id === actEl.dataset.cid);
+        if (!cl) return;
+        const count = state.notes.filter(n => n.clusterId === cl.id).length;
+        const box = document.getElementById('modal-generic-box');
+        box.innerHTML = `
+          <b style="font-size:14px; color:var(--red);">Hapus Kluster "${esc(cl.name)}"?</b>
+          <p style="font-size:11px; color:var(--muted);">Seluruh catatan di dalam kluster ini (${count} item) juga akan ikut terhapus.</p>
+          <div style="display:flex; gap:8px;">
+            <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+            <button id="exec-del-nc" class="btn-danger" style="flex:1;">Ya, Hapus</button>
+          </div>
+        `;
+        document.getElementById('modal-generic').classList.add('open');
+        document.getElementById('exec-del-nc').onclick = () => {
+          state.noteClusters = state.noteClusters.filter(c => c.id !== cl.id);
+          state.notes = state.notes.filter(n => n.clusterId !== cl.id);
+          document.getElementById('modal-generic').classList.remove('open');
+          saveState();
+          showToast('Kluster dihapus');
+        };
+      } else if (action === 'open-add-note') {
+        openNoteFormModal(actEl.dataset.cid, null);
+      } else if (action === 'edit-note') {
+        const nt = state.notes.find(n => n.id === actEl.dataset.nid);
+        if (nt) openNoteFormModal(nt.clusterId, nt.id);
+      } else if (action === 'toggle-note-done') {
+        const nt = state.notes.find(n => n.id === actEl.dataset.nid);
+        if (!nt) return;
+        const cl = state.noteClusters.find(c => c.id === nt.clusterId);
+        const linkedWallet = (cl && cl.linkedWalletId) ? state.wallets.find(w => w.id === cl.linkedWalletId) : null;
+
+        if (!nt.isDone) {
+          nt.isDone = true;
+          if (linkedWallet && nt.amount > 0) {
+            const txType = cl.linkedTxType || 'expense';
+            const cat = cl.linkedCategory || (txType === 'income' ? 'Gaji & Uang Saku' : autoCategory(nt.title));
+            const rawTitle = `[${cl.name}] ${nt.title}`;
+            const finalTitle = cat === 'Lainnya' ? `Lainnya: ${rawTitle}` : rawTitle;
+
+            const tx = {
+              id: 'tx_' + Date.now(),
+              walletId: linkedWallet.id,
+              type: txType,
+              amount: nt.amount,
+              title: finalTitle,
+              category: cat,
+              isAuto: false,
+              createdAt: new Date().toISOString()
+            };
+            applyWalletEffect(tx);
+            state.transactions.unshift(tx);
+            nt.linkedTxId = tx.id;
+            saveState();
+            showToast(`✓ Tercatat ke ${txType === 'income' ? 'Pemasukan' : 'Pengeluaran'} (${linkedWallet.name}): ${rp(nt.amount)}`);
+            return;
+          }
+          saveState();
+          if (linkedWallet && nt.amount <= 0) {
+            showToast('Ditandai selesai (nominal Rp 0, saldo dompet tetap)');
+          }
+        } else {
+          nt.isDone = false;
+          if (nt.linkedTxId) {
+            const txIdx = state.transactions.findIndex(t => t.id === nt.linkedTxId);
+            if (txIdx > -1) {
+              applyWalletEffect(state.transactions[txIdx], true);
+              state.transactions.splice(txIdx, 1);
+            }
+            nt.linkedTxId = null;
+            saveState();
+            showToast('Centang dibatalkan — Transaksi otomatis dihapus & saldo dipulihkan');
+            return;
+          }
+          saveState();
+        }
+      } else if (action === 'delete-note') {
+        state.notes = state.notes.filter(n => n.id !== actEl.dataset.nid);
+        saveState();
+        showToast('Catatan dihapus');
+      } else if (action === 'realize-note') {
+        openRealizeNoteModal(actEl.dataset.nid);
+      } else if (action === 'sim-notif') {
+        const sim = actEl.dataset.sim;
+        if (sim === 'qris') processIncomingNotification('com.gojek.app', 'GoPay', 'Pembayaran QRIS Rp18.000 di WARUNG NASI PADANG berhasil');
+        if (sim === 'topup') processIncomingNotification('com.bca', 'BCA mobile', 'Transfer ke GoPay Rp100.000 berhasil');
+        if (sim === 'shopee') processIncomingNotification('com.shopee.id', 'Shopee', 'Pembayaran Rp18.000 untuk Kabel Data Type-C terkonfirmasi');
+        if (sim === 'unparsed') processIncomingNotification('com.bank.asing', 'Info Bank', 'Mutasi rekening berhasil diproses sistem');
+      } else if (action === 'open-unparsed') {
+        const box = document.getElementById('modal-generic-box');
+        box.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b style="font-size:13px; color:var(--amber);">⚠️ Notifikasi Belum Terbaca (${state.unparsedLogs.length})</b>
+            <button class="act-icon" data-action="close-modals">✕</button>
+          </div>
+          ${state.unparsedLogs.length === 0 ? '<p style="font-size:12px; color:var(--muted); text-align:center; padding:16px 0;">Semua notifikasi terbaca rapi.</p>' :
+            state.unparsedLogs.map(u => `
+              <div style="background:var(--bg); padding:10px; border-radius:12px; font-size:11px;">
+                <p style="margin-bottom:8px;">${esc(u.rawText)}</p>
+                <button class="btn-primary" style="padding:5px 10px; font-size:11px;" data-action="dismiss-unp" data-id="${u.id}">Tandai Selesai</button>
+              </div>
+            `).join('')}
+        `;
+        document.getElementById('modal-generic').classList.add('open');
+      } else if (action === 'dismiss-unp') {
+        state.unparsedLogs = state.unparsedLogs.filter(u => u.id !== actEl.dataset.id);
+        document.getElementById('modal-generic').classList.remove('open');
+        saveState();
+      } else if (action === 'export-json') {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+        a.download = 'finos-backup.json';
+        a.click();
+      } else if (action === 'reset-empty') {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    });
+
+    document.body.addEventListener('change', (e) => {
+      const act = e.target.dataset.action;
+      if (act === 'wallet-filter') {
+        walletFilter = e.target.value;
+        drilldownCat = null;
+        renderAll();
+      } else if (act === 'history-wallet-filter') {
+        historyWalletFilter = e.target.value;
+        renderAll();
+      } else if (act === 'chart-select-month') {
+        chartSelectedMonth = parseInt(e.target.value, 10);
+        drilldownCat = null;
+        renderAll();
+      } else if (act === 'chart-select-year') {
+        chartSelectedYear = parseInt(e.target.value, 10);
+        drilldownCat = null;
+        renderAll();
+      } else if (act === 'chart-date-start') {
+        chartCustomStart = e.target.value || firstDayMonth;
+        drilldownCat = null;
+        renderAll();
+      } else if (act === 'chart-date-end') {
+        chartCustomEnd = e.target.value || todayStr;
+        drilldownCat = null;
+        renderAll();
+      }
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
