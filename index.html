@@ -102,6 +102,12 @@
     .goal-card { background: var(--bg); border: 1px solid var(--surface-2); border-radius: 14px; padding: 11px 12px; }
     .goal-card.achieved { border-color: rgba(16, 185, 129, 0.55); background: rgba(16, 185, 129, 0.05); }
 
+    /* Settings Toggle Switch Rows */
+    .setting-toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--surface-2); border-radius: 12px; padding: 9px 11px; }
+    .switch-pill { border: 1px solid #334155; background: var(--surface-2); color: var(--muted); padding: 5px 11px; border-radius: 99px; font-size: 11px; font-weight: 800; cursor: pointer; min-width: 58px; text-align: center; transition: 0.15s; flex-shrink: 0; }
+    .switch-pill.on-blue { background: var(--blue-soft); border-color: rgba(56, 189, 248, 0.5); color: #7dd3fc; }
+    .switch-pill.on-green { background: var(--green-soft); border-color: rgba(16, 185, 129, 0.5); color: #6ee7b7; }
+
     /* Metric KPI Cards in Chart */
     .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
     .kpi-val { font-size: 15px; font-weight: 800; margin-top: 4px; color: var(--text); }
@@ -344,7 +350,9 @@
       settings: {
         autoTrackingEnabled: true,
         autoEnabledAt: new Date(Date.now() - 86400000).toISOString(),
-        hideBalance: false
+        hideBalance: false,
+        enableBudgetZoneA: true,
+        enableBudgetZoneB: true
       },
       wallets: [],
       transactions: [],
@@ -363,48 +371,44 @@
       }
     };
 
+    function hydrateState(parsed) {
+      const base = JSON.parse(JSON.stringify(EMPTY_STATE));
+      return {
+        ...base,
+        ...parsed,
+        settings: {
+          ...base.settings,
+          ...(parsed.settings || {}),
+          enableBudgetZoneA: parsed.settings?.enableBudgetZoneA ?? true,
+          enableBudgetZoneB: parsed.settings?.enableBudgetZoneB ?? true
+        },
+        noteClusters: Array.isArray(parsed.noteClusters) ? parsed.noteClusters : [],
+        notes: Array.isArray(parsed.notes) ? parsed.notes : [],
+        savingsGoals: Array.isArray(parsed.savingsGoals) ? parsed.savingsGoals : [],
+        customExpenseCats: Array.isArray(parsed.customExpenseCats) ? parsed.customExpenseCats : []
+      };
+    }
+
     function loadInitialState() {
       const rawV5 = localStorage.getItem(STORAGE_KEY);
       if (rawV5) {
-        try {
-          const parsed = JSON.parse(rawV5);
-          return {
-            ...JSON.parse(JSON.stringify(EMPTY_STATE)),
-            ...parsed,
-            noteClusters: Array.isArray(parsed.noteClusters) ? parsed.noteClusters : [],
-            notes: Array.isArray(parsed.notes) ? parsed.notes : [],
-            savingsGoals: Array.isArray(parsed.savingsGoals) ? parsed.savingsGoals : [],
-            customExpenseCats: Array.isArray(parsed.customExpenseCats) ? parsed.customExpenseCats : []
-          };
-        } catch (e) {}
+        try { return hydrateState(JSON.parse(rawV5)); } catch (e) {}
       }
       const rawV4 = localStorage.getItem(LEGACY_KEY);
       if (rawV4) {
-        try {
-          const parsed4 = JSON.parse(rawV4);
-          return {
-            ...JSON.parse(JSON.stringify(EMPTY_STATE)),
-            ...parsed4,
-            noteClusters: Array.isArray(parsed4.noteClusters) ? parsed4.noteClusters : [],
-            notes: Array.isArray(parsed4.notes) ? parsed4.notes : [],
-            savingsGoals: [],
-            customExpenseCats: []
-          };
-        } catch (e) {}
+        try { return hydrateState(JSON.parse(rawV4)); } catch (e) {}
       }
       return JSON.parse(JSON.stringify(EMPTY_STATE));
     }
 
     let state = loadInitialState();
 
-    // Gabungkan kategori bawaan + kategori custom buatan user + kategori yang dipakai di budget/transaksi
     function getExpenseCategories() {
       const set = new Set([...DEFAULT_EXPENSE_CATS, ...(state.customExpenseCats || [])]);
       PERIOD_KEYS.forEach(pk => {
         const allocs = state.budgetsByPeriod[pk]?.allocations || {};
         Object.keys(allocs).forEach(k => set.add(k));
       });
-      // Pastikan 'Lainnya' selalu di posisi terakhir agar rapi
       const arr = Array.from(set).filter(c => c !== 'Lainnya');
       arr.push('Lainnya');
       return arr;
@@ -495,7 +499,6 @@
 
     function autoCategory(text) {
       const l = text.toLowerCase();
-      // Cek kecocokan dengan nama kategori custom buatan user terlebih dahulu
       const customMatch = (state.customExpenseCats || []).find(c => l.includes(c.toLowerCase()));
       if (customMatch) return customMatch;
 
@@ -1143,7 +1146,7 @@
                         ${tx.isEdited ? '<span class="badge-mode badge-edited">DIEDIT</span>' : ''}
                       </div>
                       <div class="tx-meta">
-                        <span>${esc(w ? w.name : '')}</span> •
+                        <span>${esc(w ? w.name : 'Dompet Dihapus')}</span> •
                         <span>${isSync ? 'Koreksi saldo' : esc(tx.category)}</span> •
                         <span>${formatTimeShort(tx.createdAt)}</span>
                       </div>
@@ -1291,12 +1294,14 @@
         }
       }
 
-      // 3. TAB BUDGET (ARSITEKTUR DUAL-ZONE: ZONA A TABUNGAN/INVESTASI + ZONA B POS PENGELUARAN BEBAS)
+      // 3. TAB BUDGET (MODULAR: ZONA A & ZONA B BISA DI ON/OFF DI PENGATURAN)
       if (activeTab === 'budget') {
         const pKey = state.activeBudgetPeriod;
         const pCfg = state.budgetsByPeriod[pKey];
+        const showZoneA = state.settings.enableBudgetZoneA !== false;
+        const showZoneB = state.settings.enableBudgetZoneB !== false;
 
-        // --- Hitung Zona A: Kantong Tabungan & Investasi ---
+        // --- Hitung Zona A ---
         const goals = state.savingsGoals || [];
         const totalSavedAssets = goals.reduce((sum, g) => {
           const w = state.wallets.find(x => x.id === g.walletId);
@@ -1309,7 +1314,7 @@
           return sum + inTrf;
         }, 0);
 
-        // --- Hitung Zona B: Pos Anggaran Pengeluaran Bebas ---
+        // --- Hitung Zona B ---
         const operationalWallets = state.wallets.filter(w => w.category !== 'invest');
         const linkedWallets = operationalWallets.filter(w => pCfg.includedWalletIds.includes(w.id));
         const linkedBalance = linkedWallets.reduce((s, w) => s + w.balance, 0);
@@ -1335,22 +1340,7 @@
 
         const overallStatus = getBudgetUsageStatus(totalAllocatedSpent, totalAllocated);
 
-        container.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <b style="font-size:15px;">Dual-Zone Budgeting</b>
-              <span style="display:block; font-size:11px; color:var(--muted);">Pisahkan aset tabungan dari pos pengeluaran bebas</span>
-            </div>
-            ${pKey === 'custom' ? `<button class="btn-secondary" style="padding:5px 9px; font-size:10.5px;" data-action="open-custom-period-modal">📅 Rentang</button>` : ''}
-          </div>
-
-          <div class="seg-tabs">
-            ${[['daily','Hari'],['weekly','Pekan'],['monthly','Bulan'],['yearly','Tahun'],['custom','Periode']].map(([k, lbl]) =>
-              `<button class="seg-btn ${pKey === k ? 'active' : ''}" data-action="switch-budget-period" data-period="${k}">${lbl}</button>`
-            ).join('')}
-          </div>
-
-          <!-- ZONA A: KANTONG TABUNGAN & INVESTASI (NON-PENGELUARAN) -->
+        const zoneAHtml = showZoneA ? `
           <section class="zone-banner zone-saving">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
               <div>
@@ -1442,8 +1432,9 @@
               </div>
             `}
           </section>
+        ` : '';
 
-          <!-- ZONA B: POS ANGGARAN PENGELUARAN (KATEGORI BEBAS) -->
+        const zoneBHtml = showZoneB ? `
           <section class="zone-banner zone-expense">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
               <div>
@@ -1542,6 +1533,40 @@
               </div>
             `}
           </section>
+        ` : '';
+
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <b style="font-size:15px;">Budgeting</b>
+              <span style="display:block; font-size:11px; color:var(--muted);">Atur zona aktif melalui ikon ⚙️ di pojok kanan atas</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              ${pKey === 'custom' && (showZoneA || showZoneB) ? `<button class="btn-secondary" style="padding:5px 9px; font-size:10.5px;" data-action="open-custom-period-modal">📅 Rentang</button>` : ''}
+              <button class="btn-secondary" style="padding:5px 9px; font-size:10.5px;" data-action="open-settings">⚙️ Zona</button>
+            </div>
+          </div>
+
+          ${(showZoneA || showZoneB) ? `
+            <div class="seg-tabs">
+              ${[['daily','Hari'],['weekly','Pekan'],['monthly','Bulan'],['yearly','Tahun'],['custom','Periode']].map(([k, lbl]) =>
+                `<button class="seg-btn ${pKey === k ? 'active' : ''}" data-action="switch-budget-period" data-period="${k}">${lbl}</button>`
+              ).join('')}
+            </div>
+          ` : ''}
+
+          ${zoneAHtml}
+          ${zoneBHtml}
+
+          ${(!showZoneA && !showZoneB) ? `
+            <div class="card" style="text-align:center; padding:28px 16px;">
+              <p style="font-size:13px; font-weight:700; margin-bottom:6px;">Semua Zona Budgeting Sedang Nonaktif</p>
+              <p style="font-size:11px; color:var(--muted); line-height:1.45; margin-bottom:14px;">
+                Kamu menonaktifkan <b>Zona A (Tabungan & Investasi)</b> dan <b>Zona B (Pos Pengeluaran)</b>. Aktifkan kembali salah satu atau keduanya sesuai kebutuhanmu.
+              </p>
+              <button class="btn-primary" data-action="open-settings">⚙️ Buka Pengaturan Zona</button>
+            </div>
+          ` : ''}
         `;
       }
 
@@ -1665,7 +1690,6 @@
       const existing = editGoalId ? state.savingsGoals.find(g => g.id === editGoalId) : null;
       const box = document.getElementById('modal-generic-box');
 
-      // Urutkan dompet kluster 'invest' paling atas agar mudah dipilih
       const sortedWallets = [...state.wallets].sort((a, b) => (a.category === 'invest' ? -1 : 1) - (b.category === 'invest' ? -1 : 1));
       let mode = existing ? existing.mode : 'GOAL_LOCKED';
       let selectedWalletId = existing ? existing.walletId : (sortedWallets[0]?.id || '');
@@ -1803,7 +1827,6 @@
         if (mode === 'GOAL_LOCKED' && targetAmt <= 0) return showToast('Masukkan nominal target yang valid');
         if (!selectedWalletId) return showToast('Pilih atau buat dompet penampung terlebih dahulu');
 
-        // Otomatis keluarkan dompet penampung tabungan dari sumber saldo belanja Zona B agar terkunci
         PERIOD_KEYS.forEach(pk => {
           state.budgetsByPeriod[pk].includedWalletIds = state.budgetsByPeriod[pk].includedWalletIds.filter(id => id !== selectedWalletId);
         });
@@ -1956,7 +1979,6 @@
         if (!catName) return showToast('Nama kategori pos wajib diisi');
         if (limit <= 0) return showToast('Masukkan batas nominal anggaran yang valid');
 
-        // Simpan ke daftar kategori custom jika belum ada di kategori bawaan
         if (!DEFAULT_EXPENSE_CATS.includes(catName) && !(state.customExpenseCats || []).includes(catName)) {
           state.customExpenseCats.push(catName);
         }
@@ -2364,12 +2386,157 @@
       };
     }
 
-    function openSystemSettingsModal() {
+    // MODAL EDIT & HAPUS DOMPET (DENGAN KONFIRMASI PENGHAPUSAN)
+    function openWalletEditModal(walletId) {
+      const w = state.wallets.find(x => x.id === walletId);
+      if (!w) return;
+      const clusterLabel = w.category === 'bank' ? 'Bank' : w.category === 'ewallet' ? 'E-Wallet' : w.category === 'invest' ? 'Investasi & Tabungan' : 'Fisik / Cash';
       const box = document.getElementById('modal-generic-box');
+
+      function renderWalletEditForm() {
+        box.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b style="font-size:14px;">✎ Edit Akun ${esc(w.name)}</b>
+            <button class="act-icon" data-action="close-modals">✕</button>
+          </div>
+          <p style="font-size:11px; color:var(--muted); line-height:1.4;">
+            Saldo saat ini: <b>${rp(w.balance)}</b> (${clusterLabel}). Selisih penyesuaian dicatat sebagai <b>SYNC</b> di Laporan agar tidak mengubah arus kas.
+          </p>
+          <div>
+            <span class="label-xs">Nama Dompet / Akun</span>
+            <input id="edit-name-inp" type="text" value="${esc(w.name)}" style="margin-top:4px; margin-bottom:8px;" />
+            <span class="label-xs">Saldo Aktual Saat Ini (Rp)</span>
+            <input id="edit-bal-inp" type="number" value="${w.balance}" style="margin-top:4px; font-size:16px; font-weight:700;" />
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
+            <button id="save-bal-btn" class="btn-primary" style="flex:1;">Sinkronkan</button>
+          </div>
+          <div style="border-top:1px solid var(--surface-2); padding-top:12px;">
+            <button id="ask-del-wallet-btn" class="btn-danger" style="width:100%;">🗑️ Hapus Akun / Dompet Ini</button>
+          </div>
+        `;
+
+        document.getElementById('save-bal-btn').onclick = () => {
+          const nextName = document.getElementById('edit-name-inp').value.trim();
+          const nextBal = parseInt(document.getElementById('edit-bal-inp').value, 10);
+          if (nextName) w.name = nextName;
+          if (!isNaN(nextBal)) {
+            const diff = nextBal - w.balance;
+            if (diff !== 0) {
+              state.transactions.unshift({
+                id: 'tx_sync_' + Date.now(),
+                walletId: w.id,
+                type: 'sync',
+                syncDiff: diff,
+                amount: Math.abs(diff),
+                title: `Penyesuaian Saldo (${w.name})`,
+                category: 'Sinkronisasi',
+                isAuto: false,
+                createdAt: new Date().toISOString()
+              });
+              w.balance = nextBal;
+            }
+          }
+          document.getElementById('modal-generic').classList.remove('open');
+          saveState();
+          showToast('Saldo disinkronkan tanpa mengubah arus kas');
+        };
+
+        document.getElementById('ask-del-wallet-btn').onclick = () => {
+          renderWalletDeleteConfirm();
+        };
+      }
+
+      function renderWalletDeleteConfirm() {
+        const linkedGoal = state.savingsGoals.find(g => g.walletId === w.id);
+        box.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b style="font-size:14px; color:var(--red);">⚠️ Konfirmasi Hapus Dompet</b>
+            <button class="act-icon" data-action="close-modals">✕</button>
+          </div>
+
+          <div style="background:var(--red-soft); border:1px solid rgba(244,63,94,0.4); border-radius:14px; padding:12px;">
+            <div style="font-size:13px; font-weight:800; color:#fecdd3;">${esc(w.name)} <span style="font-size:10.5px; font-weight:600; color:#fda4af;">(${clusterLabel})</span></div>
+            <div style="font-size:16px; font-weight:800; color:#fff; margin-top:4px;">Saldo tersisa: ${rp(w.balance)}</div>
+          </div>
+
+          <p style="font-size:11.5px; color:#cbd5e1; line-height:1.45;">
+            Apakah kamu yakin ingin menghapus akun <b>${esc(w.name)}</b>?
+          </p>
+          <ul style="font-size:11px; color:var(--muted); padding-left:16px; line-height:1.45; display:flex; flex-direction:column; gap:4px;">
+            <li>Saldo sebesar <b>${rp(w.balance)}</b> pada akun ini akan dihapus dari total kekayaan.</li>
+            <li>Riwayat transaksi lama tetap tersimpan sebagai arsip laporan.</li>
+            ${linkedGoal ? `<li style="color:#fcd34d;">Kantong tabungan <b>${esc(linkedGoal.name)}</b> juga akan dilepas dari akun ini.</li>` : ''}
+          </ul>
+
+          <div style="display:flex; gap:8px;">
+            <button id="back-edit-wallet-btn" class="preset-btn" style="flex:1; padding:10px;">← Kembali</button>
+            <button id="confirm-del-wallet-btn" class="btn-danger" style="flex:1; background:var(--red); color:#fff; border:none;">Ya, Hapus Permanen</button>
+          </div>
+        `;
+
+        document.getElementById('back-edit-wallet-btn').onclick = () => renderWalletEditForm();
+
+        document.getElementById('confirm-del-wallet-btn').onclick = () => {
+          const deletedName = w.name;
+          state.wallets = state.wallets.filter(item => item.id !== w.id);
+
+          // Bersihkan referensi di Budget, Kluster Catatan, dan Kantong Tabungan
+          PERIOD_KEYS.forEach(pk => {
+            state.budgetsByPeriod[pk].includedWalletIds = state.budgetsByPeriod[pk].includedWalletIds.filter(id => id !== w.id);
+          });
+          state.noteClusters.forEach(nc => {
+            if (nc.linkedWalletId === w.id) nc.linkedWalletId = '';
+          });
+          state.savingsGoals = state.savingsGoals.filter(g => g.walletId !== w.id);
+
+          document.getElementById('modal-generic').classList.remove('open');
+          saveState();
+          showToast(`Akun "${deletedName}" berhasil dihapus`);
+        };
+      }
+
+      renderWalletEditForm();
+      document.getElementById('modal-generic').classList.add('open');
+    }
+
+    function openSystemSettingsModal() {
+      const zoneAOn = state.settings.enableBudgetZoneA !== false;
+      const zoneBOn = state.settings.enableBudgetZoneB !== false;
+      const box = document.getElementById('modal-generic-box');
+
       box.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <b style="font-size:15px;">⚙️ Pengaturan Sistem</b>
           <button class="act-icon" data-action="close-modals">✕</button>
+        </div>
+
+        <div style="background:var(--bg); border:1px solid var(--surface-2); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div>
+            <b style="font-size:12px; color:#7dd3fc;">🎯 Pengaturan Fitur Budgeting</b>
+            <p style="font-size:11px; color:var(--muted); margin-top:2px;">Aktifkan atau matikan zona budgeting sesuai kebutuhanmu:</p>
+          </div>
+
+          <div class="setting-toggle-row">
+            <div style="min-width:0;">
+              <b style="font-size:11.5px; display:block;">Zona A: Tabungan & Investasi</b>
+              <span style="font-size:10px; color:var(--muted); display:block; line-height:1.3;">Target terkunci & akumulasi aset non-pengeluaran.</span>
+            </div>
+            <button class="switch-pill ${zoneAOn ? 'on-blue' : ''}" data-action="toggle-budget-zone" data-zone="A">
+              ${zoneAOn ? 'ON' : 'OFF'}
+            </button>
+          </div>
+
+          <div class="setting-toggle-row">
+            <div style="min-width:0;">
+              <b style="font-size:11.5px; display:block;">Zona B: Pos Pengeluaran Bebas</b>
+              <span style="font-size:10px; color:var(--muted); display:block; line-height:1.3;">Pembagian plafon belanja dengan kategori kustom.</span>
+            </div>
+            <button class="switch-pill ${zoneBOn ? 'on-green' : ''}" data-action="toggle-budget-zone" data-zone="B">
+              ${zoneBOn ? 'ON' : 'OFF'}
+            </button>
+          </div>
         </div>
 
         <div style="background:var(--bg); border:1px solid var(--surface-2); border-radius:14px; padding:12px;">
@@ -2422,7 +2589,6 @@
       const isOther = selectedCategory === 'Lainnya';
       const body = document.getElementById('modal-add-body');
 
-      // Pilih default tujuan transfer jika ada preselectTransferToId
       const defaultToIdx = preselectTransferToId
         ? Math.max(0, state.wallets.findIndex(w => w.id === preselectTransferToId))
         : (state.wallets.length > 1 ? 1 : 0);
@@ -2593,6 +2759,12 @@
         state.settings.hideBalance = !state.settings.hideBalance;
         saveState();
         if (document.getElementById('modal-generic').classList.contains('open')) openSystemSettingsModal();
+      } else if (action === 'toggle-budget-zone') {
+        const z = actEl.dataset.zone;
+        if (z === 'A') state.settings.enableBudgetZoneA = !(state.settings.enableBudgetZoneA !== false);
+        if (z === 'B') state.settings.enableBudgetZoneB = !(state.settings.enableBudgetZoneB !== false);
+        saveState();
+        openSystemSettingsModal();
       } else if (action === 'open-settings') {
         openSystemSettingsModal();
       } else if (action === 'toggle-cluster-edit') {
@@ -2605,49 +2777,7 @@
           showToast('Terkunci — Klik "Mode Edit" di kluster ini untuk mengedit');
           return;
         }
-        const w = state.wallets.find(x => x.id === actEl.dataset.id);
-        if (!w) return;
-        const box = document.getElementById('modal-generic-box');
-        box.innerHTML = `
-          <b style="font-size:14px;">Penyesuaian Saldo ${esc(w.name)}</b>
-          <p style="font-size:11px; color:var(--muted);">Saldo saat ini: <b>${rp(w.balance)}</b>. Selisih (termasuk return/imbal hasil investasi) akan dicatat sebagai <b>SYNC</b> di tab Laporan sehingga tidak mengubah angka pemasukan maupun pengeluaran.</p>
-          <div>
-            <span class="label-xs">Nama Dompet</span>
-            <input id="edit-name-inp" type="text" value="${esc(w.name)}" style="margin-top:4px; margin-bottom:8px;" />
-            <span class="label-xs">Saldo Aktual Saat Ini (Rp)</span>
-            <input id="edit-bal-inp" type="number" value="${w.balance}" style="margin-top:4px; font-size:16px; font-weight:700;" />
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button class="preset-btn" style="flex:1; padding:10px;" data-action="close-modals">Batal</button>
-            <button id="save-bal-btn" class="btn-primary" style="flex:1;">Sinkronkan</button>
-          </div>
-        `;
-        document.getElementById('modal-generic').classList.add('open');
-        document.getElementById('save-bal-btn').onclick = () => {
-          const nextName = document.getElementById('edit-name-inp').value.trim();
-          const nextBal = parseInt(document.getElementById('edit-bal-inp').value, 10);
-          if (nextName) w.name = nextName;
-          if (!isNaN(nextBal)) {
-            const diff = nextBal - w.balance;
-            if (diff !== 0) {
-              state.transactions.unshift({
-                id: 'tx_sync_' + Date.now(),
-                walletId: w.id,
-                type: 'sync',
-                syncDiff: diff,
-                amount: Math.abs(diff),
-                title: `Penyesuaian Saldo (${w.name})`,
-                category: 'Sinkronisasi',
-                isAuto: false,
-                createdAt: new Date().toISOString()
-              });
-              w.balance = nextBal;
-            }
-          }
-          document.getElementById('modal-generic').classList.remove('open');
-          saveState();
-          showToast('Saldo disinkronkan tanpa mengubah arus kas');
-        };
+        openWalletEditModal(actEl.dataset.id);
       } else if (action === 'add-cluster-wallet') {
         const cluster = actEl.dataset.cluster;
         const label = cluster === 'bank' ? 'Bank' : cluster === 'ewallet' ? 'E-Wallet' : cluster === 'invest' ? 'Investasi & Tabungan' : 'Dompet Fisik';
@@ -2673,7 +2803,6 @@
           if (!name) return;
           const newId = 'w_' + Date.now();
           state.wallets.push({ id: newId, name, category: cluster, balance: bal });
-          // Hanya masukkan otomatis ke sumber saldo operasional jika BUKAN kluster investasi
           if (cluster !== 'invest') {
             PERIOD_KEYS.forEach(pk => {
               if (!state.budgetsByPeriod[pk].includedWalletIds.includes(newId)) {
@@ -2921,14 +3050,7 @@
           if (!parsed || !Array.isArray(parsed.wallets) || !Array.isArray(parsed.transactions)) {
             return showToast('Format file cadangan tidak valid');
           }
-          state = {
-            ...JSON.parse(JSON.stringify(EMPTY_STATE)),
-            ...parsed,
-            noteClusters: Array.isArray(parsed.noteClusters) ? parsed.noteClusters : [],
-            notes: Array.isArray(parsed.notes) ? parsed.notes : [],
-            savingsGoals: Array.isArray(parsed.savingsGoals) ? parsed.savingsGoals : [],
-            customExpenseCats: Array.isArray(parsed.customExpenseCats) ? parsed.customExpenseCats : []
-          };
+          state = hydrateState(parsed);
           document.getElementById('modal-generic').classList.remove('open');
           saveState();
           showToast('Data berhasil dipulihkan dari file cadangan');
